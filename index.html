@@ -120,8 +120,8 @@ const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
   new THREE.MeshStandardMaterial({
     map: earthTex,
-    roughness: 0.55,
-    metalness: 0.02
+   shininess: 8,
+    specular: new THREE.Color(0x111111)
   })
 );
 scene.add(earth);
@@ -330,6 +330,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
