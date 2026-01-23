@@ -46,7 +46,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.mod
 const container = document.getElementById("earth-container");
 const scene = new THREE.Scene();
 
-const cameraHome = new THREE.Vector3(0, 0, 4.6);
+const cameraHome = new THREE.Vector3(0, 0, 4.0);
 const camera = new THREE.PerspectiveCamera(
   45,
   container.clientWidth / container.clientHeight,
@@ -321,4 +321,5 @@ window.addEventListener("resize", () => {
 </script>
 
 </body>
+
 </html>
