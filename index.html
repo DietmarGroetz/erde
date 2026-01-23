@@ -69,6 +69,13 @@ container.appendChild(renderer.domElement);
 /* ===== Licht (sanft + Glanz) ===== */
 scene.add(new THREE.AmbientLight(0xffffff, 0.90));
 
+const skyLight = new THREE.HemisphereLight(
+  0xffffff,   // Himmel (oben)
+  0x223344,   // Boden (unten)
+  0.55        // Stärke
+);
+scene.add(skyLight);  
+
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(5, 0, 2);
 scene.add(sun);
@@ -323,6 +330,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
