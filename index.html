@@ -69,7 +69,7 @@ container.appendChild(renderer.domElement);
 /* ===== Licht (sanft + Glanz) ===== */
 scene.add(new THREE.AmbientLight(0xffffff, 0.90));
 
-const sun = new THREE.DirectionalLight(0xffffff, 1.8);
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(5, 0, 2);
 scene.add(sun);
 
@@ -323,6 +323,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
