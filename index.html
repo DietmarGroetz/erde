@@ -67,9 +67,9 @@ renderer.setClearColor(0x000000);
 container.appendChild(renderer.domElement);
 
 /* ===== Licht (sanft + Glanz) ===== */
-scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+scene.add(new THREE.AmbientLight(0xffffff, 0.90));
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.6);
+const sun = new THREE.DirectionalLight(0xffffff, 1.8);
 sun.position.set(5, 0, 2);
 scene.add(sun);
 
@@ -113,8 +113,8 @@ const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
   new THREE.MeshStandardMaterial({
     map: earthTex,
-    roughness: 0.35,
-    metalness: 0.10
+    roughness: 0.30,
+    metalness: 0.08
   })
 );
 scene.add(earth);
@@ -323,6 +323,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
