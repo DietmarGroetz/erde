@@ -209,6 +209,14 @@ for (let i = 0; i < 700; i++) {
   );
 
   g.add(core, glow);
+  // --- User-Bild (Test) ---
+const imageSprite = new THREE.Sprite(userImageMaterial.clone());
+imageSprite.scale.set(0.18, 0.18, 1);
+imageSprite.position.set(0, 0, 0.02);
+imageSprite.material.opacity = 0.0;
+
+g.add(imageSprite);
+g.userData.image = imageSprite;
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
@@ -298,6 +306,9 @@ function animate() {
     const vis = THREE.MathUtils.smoothstep(facing, 0.25, 0.6);
     d.userData.core.material.opacity = vis;
     d.userData.glow.material.opacity = 0.2 * vis;
+    // Bild nur auf Vorderseite sichtbar
+d.userData.image.material.opacity =
+  THREE.MathUtils.smoothstep(vis, 0.3, 0.8);
 
     d.lookAt(camera.position);
   });
@@ -342,6 +353,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
