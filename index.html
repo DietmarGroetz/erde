@@ -332,7 +332,7 @@ if (d.userData.image) {
       hovered = g;
       hovered.userData.core.material.color.set(COLOR_HOVER);
       hovered.userData.glow.material.color.set(COLOR_HOVER);
-      hovered.scale.set(3.0, 3.0, 3.0);
+     hovered.userData.image.scale.set(0.18, 0.18, 1);
       hovered.userData.image.scale.set(0.18, 0.18, 1);
     }
   } else if (hovered && !active) {
@@ -363,6 +363,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
