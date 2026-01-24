@@ -213,7 +213,7 @@ for (let i = 0; i < 700; i++) {
 const imageSprite = new THREE.Sprite(userImageMaterial.clone());
 imageSprite.scale.set(0.18, 0.18, 1);
 imageSprite.position.set(0, 0, 0.02);
-imageSprite.material.opacity = 0.0;
+imageSprite.material.opacity = 1.0;
 
 g.add(imageSprite);
 g.userData.image = imageSprite;
@@ -356,6 +356,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
