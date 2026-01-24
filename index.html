@@ -278,6 +278,10 @@ function resetDot(d) {
   d.userData.core.material.color.set(COLOR_FRONT);
   d.userData.glow.material.color.set(COLOR_FRONT);
   d.scale.set(1, 1, 1);
+
+  if (d.userData.image) {
+    d.userData.image.scale.set(0.06, 0.06, 1);
+  }
 }
 
 /* ===== Animation ===== */
@@ -359,6 +363,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
