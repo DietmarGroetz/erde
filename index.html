@@ -211,8 +211,8 @@ for (let i = 0; i < 700; i++) {
   g.add(core, glow);
   // --- User-Bild (Test) ---
 const imageSprite = new THREE.Sprite(userImageMaterial.clone());
-imageSprite.scale.set(0.18, 0.18, 1);
-imageSprite.position.set(0, 0, 0.02);
+imageSprite.scale.set(0.06, 0.06, 1);
+imageSprite.position.set(0, 0, 0.045);
 imageSprite.material.opacity = 1.0;
 
 g.add(imageSprite);
@@ -226,7 +226,7 @@ g.add(imageSprite);
   lat,
   lon,
   speed: 0.00025,
-  radius: 1.03,
+  radius: 1.045,
   core,
   glow,
   image: imageSprite,
@@ -357,6 +357,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
