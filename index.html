@@ -173,6 +173,18 @@ scene.add(terminator);
 const COLOR_FRONT  = new THREE.Color(0x5fd1c7);
 const COLOR_ACTIVE = new THREE.Color(0xf5c97a);
 const COLOR_HOVER  = new THREE.Color(0xffffff);
+ /* ===== User-Bild (Test) ===== */
+const userImageTexture = new THREE.TextureLoader().load(
+  'assets/user_test.jpg'
+);
+userImageTexture.colorSpace = THREE.SRGBColorSpace;
+
+const userImageMaterial = new THREE.SpriteMaterial({
+  map: userImageTexture,
+  transparent: true,
+  depthWrite: false,
+  opacity: 0.0
+}); 
 
 /* ===== User-Punkte ===== */
 const dots = [];
@@ -330,6 +342,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
