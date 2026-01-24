@@ -307,8 +307,11 @@ function animate() {
     d.userData.core.material.opacity = vis;
     d.userData.glow.material.opacity = 0.2 * vis;
     // Bild nur auf Vorderseite sichtbar
-d.userData.image.material.opacity =
-  THREE.MathUtils.smoothstep(vis, 0.3, 0.8);
+if (d.userData.image) {
+  d.userData.image.material.opacity =
+    THREE.MathUtils.smoothstep(vis, 0.3, 0.8);
+}
+  
 
     d.lookAt(camera.position);
   });
@@ -353,6 +356,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
