@@ -216,21 +216,22 @@ imageSprite.position.set(0, 0, 0.02);
 imageSprite.material.opacity = 1.0;
 
 g.add(imageSprite);
-g.userData.image = imageSprite;
+
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
 
-  g.userData = {
-    id: "user_" + i,
-    lat,
-    lon,
-    speed: 0.00025,
-    radius: 1.03,
-    core,
-    glow,
-    state: "normal"
-  };
+ g.userData = {
+  id: "user_" + i,
+  lat,
+  lon,
+  speed: 0.00025,
+  radius: 1.03,
+  core,
+  glow,
+  image: imageSprite,
+  state: "normal"
+};
 
   dots.push(g);
   earth.add(g);
@@ -356,6 +357,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
