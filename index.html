@@ -118,7 +118,7 @@ earthTex.colorSpace = THREE.SRGBColorSpace;
 
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
-  new THREE.MeshStandardMaterial({
+ new THREE.MeshPhongMaterial({
     map: earthTex,
    shininess: 8,
     specular: new THREE.Color(0x111111)
@@ -357,6 +357,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
