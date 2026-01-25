@@ -104,7 +104,13 @@ for (let i = 0; i < 700; i++) {
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
+const radius = 1.045;
 
+g.position.set(
+  Math.cos(lat) * Math.cos(lon) * radius,
+  Math.sin(lat) * radius,
+  Math.cos(lat) * Math.sin(lon) * radius
+);
   g.userData = { lat, lon, radius: 1.045, image: img };
   earth.add(g);
   dots.push(g);
@@ -140,11 +146,7 @@ function animate() {
   dots.forEach(d => {
     const { lat, lon, radius } = d.userData;
  
-    d.position.set(
-      Math.cos(lat) * Math.cos(d.userData.lon) * radius,
-      Math.sin(lat) * radius,
-      Math.cos(lat) * Math.sin(d.userData.lon) * radius
-    );
+  
     d.lookAt(camera.position);
   });
 
@@ -184,5 +186,6 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
