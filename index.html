@@ -1,40 +1,40 @@
-!<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Global User Network</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      overflow: hidden;
-      font-family: system-ui, sans-serif;
-    }
-    #earth-container {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-    #searchBox {
-      position: absolute;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 14px;
-      font-size: 14px;
-      border-radius: 6px;
-      border: none;
-      background: rgba(0,0,0,0.55);
-      color: #fff;
-      z-index: 10;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Global User Network</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  font-family: system-ui, sans-serif;
+}
+#earth-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#searchBox {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  z-index: 10;
+}
+</style>
 </head>
-<body>
 
+<body>
 <div id="earth-container">
   <input id="searchBox" placeholder="User suchen (z.B. user_42)" />
 </div>
@@ -47,12 +47,7 @@ const container = document.getElementById("earth-container");
 const scene = new THREE.Scene();
 
 const cameraHome = new THREE.Vector3(0, 0, 3.8);
-const camera = new THREE.PerspectiveCamera(
-  45,
-  container.clientWidth / container.clientHeight,
-  0.1,
-  1000
-);
+const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
 camera.position.copy(cameraHome);
 
 /* ===== Renderer ===== */
@@ -61,180 +56,56 @@ renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
-
 renderer.setClearColor(0x000000);
 container.appendChild(renderer.domElement);
 
-/* ===== Licht (sanft + Glanz) ===== */
-scene.add(new THREE.AmbientLight(0xffffff, 0.90));
-
-const skyLight = new THREE.HemisphereLight(
-  0xffffff,   // Himmel (oben)
-  0x223344,   // Boden (unten)
-  0.55        // Stärke
-);
-scene.add(skyLight);  
+/* ===== Licht ===== */
+scene.add(new THREE.AmbientLight(0xffffff, 0.9));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.55));
 
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(8, 4, 6);
 scene.add(sun);
 
-/* ===== Sterne (rund & stabil) ===== */
-const starTex = new THREE.TextureLoader().load(
-  "https://threejs.org/examples/textures/sprites/disc.png"
-);
-
-const starGeo = new THREE.BufferGeometry();
-const starPos = [];
-for (let i = 0; i < 900; i++) {
-  starPos.push(
-    (Math.random() - 0.5) * 60,
-    (Math.random() - 0.5) * 60,
-    (Math.random() - 0.5) * 60
-  );
-}
-starGeo.setAttribute("position", new THREE.Float32BufferAttribute(starPos, 3));
-
-scene.add(new THREE.Points(
-  starGeo,
-  new THREE.PointsMaterial({
-    map: starTex,
-    size: 0.35,
-    transparent: true,
-    opacity: 0.35,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending
-  })
-));
-
-/* ===== Erde (HELL + GLANZ, STABIL) ===== */
+/* ===== Erde ===== */
 const loader = new THREE.TextureLoader();
-
-const earthTex = loader.load(
-  "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg"
-);
+const earthTex = loader.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg");
 earthTex.colorSpace = THREE.SRGBColorSpace;
 
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(1, 64, 64),
- new THREE.MeshPhongMaterial({
-    map: earthTex,
-   shininess: 8,
-    specular: new THREE.Color(0x111111)
-  })
+  new THREE.MeshPhongMaterial({ map: earthTex, shininess: 8 })
 );
 scene.add(earth);
 
 /* ===== Wolken ===== */
-const cloudTex = loader.load(
-  "https://threejs.org/examples/textures/planets/earth_clouds_1024.png"
-);
+const cloudTex = loader.load("https://threejs.org/examples/textures/planets/earth_clouds_1024.png");
 cloudTex.colorSpace = THREE.SRGBColorSpace;
-
 const clouds = new THREE.Mesh(
   new THREE.SphereGeometry(1.01, 64, 64),
-  new THREE.MeshBasicMaterial({
-    map: cloudTex,
-    transparent: true,
-    opacity: 0.35,
-    depthWrite: false
-  })
+  new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.35 })
 );
-
 scene.add(clouds);
 
-/* ===== Atmosphärische Lichtkante ===== */
-const atmosphere = new THREE.Mesh(
-  new THREE.SphereGeometry(1.06, 64, 64),
-  new THREE.MeshBasicMaterial({
-    color: 0x88ccff,
-    transparent: true,
-    opacity: 0.06,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide
-  })
-);
-scene.add(atmosphere);
+/* ===== User-Bild ===== */
+const userTex = loader.load("assets/user_test.jpg");
+userTex.colorSpace = THREE.SRGBColorSpace;
 
-/* ===== Subtiler Terminator (Tag/Nacht-Rand) ===== */
-const terminator = new THREE.Mesh(
-  new THREE.SphereGeometry(1.001, 64, 64),
-  new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.18,
-    side: THREE.BackSide
-  })
-);
-scene.add(terminator);
+const userMat = new THREE.SpriteMaterial({ map: userTex, transparent: true });
 
-/* ===== Farben ===== */
-const COLOR_FRONT  = new THREE.Color(0x5fd1c7);
-const COLOR_ACTIVE = new THREE.Color(0xf5c97a);
-const COLOR_HOVER  = new THREE.Color(0xffffff);
- /* ===== User-Bild (Test) ===== */
-const userImageTexture = new THREE.TextureLoader().load(
-  'assets/user_test.jpg'
-);
-userImageTexture.colorSpace = THREE.SRGBColorSpace;
-
-const userImageMaterial = new THREE.SpriteMaterial({
-  map: userImageTexture,
-  transparent: true,
-  depthWrite: false,
-  opacity: 0.0
-}); 
-
-/* ===== User-Punkte ===== */
 const dots = [];
-const coreGeo = new THREE.SphereGeometry(0.006, 8, 8);
-const glowGeo = new THREE.SphereGeometry(0.010, 8, 8);
-
 for (let i = 0; i < 700; i++) {
   const g = new THREE.Group();
-
-  const core = new THREE.Mesh(
-    coreGeo,
-    new THREE.MeshBasicMaterial({ color: COLOR_FRONT.clone(), transparent: true })
-  );
-
-  const glow = new THREE.Mesh(
-    glowGeo,
-    new THREE.MeshBasicMaterial({
-      color: COLOR_FRONT.clone(),
-      transparent: true,
-      opacity: 0.2
-    })
-  );
-
-  g.add(core, glow);
-  // --- User-Bild (Test) ---
-const imageSprite = new THREE.Sprite(userImageMaterial.clone());
-imageSprite.scale.set(0.02, 0.02, 1);
-imageSprite.position.set(0, 0, 0.045);
-imageSprite.material.opacity = 1.0;
-
-g.add(imageSprite);
-
+  const img = new THREE.Sprite(userMat.clone());
+  img.scale.set(0.02, 0.02, 1);
+  g.add(img);
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
 
- g.userData = {
-  id: "user_" + i,
-  lat,
-  lon,
-  speed: 0.00025,
-  radius: 1.045,
-  core,
-  glow,
-  image: imageSprite,
-  state: "normal"
-};
-
-  dots.push(g);
+  g.userData = { lat, lon, radius: 1.045, image: img };
   earth.add(g);
+  dots.push(g);
 }
 
 /* ===== Interaktion ===== */
@@ -242,129 +113,67 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hovered = null;
 let active = null;
-window.addEventListener("keydown", e => {
-  if (e.key === "Escape") {
-    resetFocus();
-  }
-});  
-  
 
 window.addEventListener("mousemove", e => {
   mouse.x = (e.clientX / container.clientWidth) * 2 - 1;
   mouse.y = -(e.clientY / container.clientHeight) * 2 + 1;
 });
+
 window.addEventListener("click", () => {
   if (!hovered) return;
-
   active = hovered;
-
-  dots.forEach(d => {
-    if (d !== active) resetDot(d);
-  });
-
-  if (active.userData.image) {
-    active.userData.image.scale.set(0.12, 0.12, 1);
-  }
 });
 
-const searchBox = document.getElementById("searchBox");
-searchBox.addEventListener("keydown", e => {
-  if (e.key === "Enter") focusUser(searchBox.value.trim());
-  if (e.key === "Escape") resetFocus();
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") active = null;
 });
-
-function focusUser(id) {
-  active = null;
-  dots.forEach(d => {
-    if (d.userData.id === id) {
-      d.userData.state = "active";
-      d.userData.core.material.color.set(COLOR_ACTIVE);
-      d.userData.glow.material.color.set(COLOR_ACTIVE);
-      d.scale.set(2.2, 2.2, 2.2);
-      active = d;
-    } else resetDot(d);
-  });
-}
-
-function resetFocus() {
-  active = null;
-  searchBox.value = "";
-  dots.forEach(resetDot);
-}
-
-function resetDot(d) {
-  d.userData.state = "normal";
-  d.userData.core.material.color.set(COLOR_FRONT);
-  d.userData.glow.material.color.set(COLOR_FRONT);
-  d.scale.set(1, 1, 1);
-
-  if (d.userData.image) {
-    d.userData.image.scale.set(0.02, 0.02, 1);
-  }
-}
 
 /* ===== Animation ===== */
 function animate() {
   requestAnimationFrame(animate);
 
   earth.rotation.y += 0.0014;
-  terminator.rotation.y = earth.rotation.y;
-  clouds.rotation.y += 0.0030;
+  clouds.rotation.y += 0.003;
 
   dots.forEach(d => {
-    d.userData.lon += d.userData.speed;
     const { lat, lon, radius } = d.userData;
+    d.userData.lon = (d.userData.lon || lon) + 0.00025;
 
     d.position.set(
-      Math.cos(lat) * Math.cos(lon) * radius,
+      Math.cos(lat) * Math.cos(d.userData.lon) * radius,
       Math.sin(lat) * radius,
-      Math.cos(lat) * Math.sin(lon) * radius
+      Math.cos(lat) * Math.sin(d.userData.lon) * radius
     );
-
-    // echte Vorder-/Rückseite
-    const worldPos = d.getWorldPosition(new THREE.Vector3());
-    const normal = worldPos.clone().normalize();
-    const toCam = camera.position.clone().sub(worldPos).normalize();
-    const facing = normal.dot(toCam);
-
-    const vis = THREE.MathUtils.smoothstep(facing, 0.25, 0.6);
-    d.userData.core.material.opacity = vis;
-    d.userData.glow.material.opacity = 0.2 * vis;
-    // Bild nur auf Vorderseite sichtbar
-if (d.userData.image) {
-  d.userData.image.material.opacity =
-    THREE.MathUtils.smoothstep(vis, 0.3, 0.8);
-  
-}
-  
-
     d.lookAt(camera.position);
   });
 
- // Hover
-raycaster.setFromCamera(mouse, camera);
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(dots.map(d => d.userData.image));
 
-const hits = raycaster.intersectObjects(
-  dots.map(d => d.userData.image),
-  false
-);
-
-if (hits.length && !active) {
-  const sprite = hits[0].object;
-  const g = dots.find(d => d.userData.image === sprite);
-
-  if (hovered !== g) {
-    if (hovered) resetDot(hovered);
-
-    hovered = g;
-    hovered.userData.core.material.color.set(COLOR_HOVER);
-    hovered.userData.glow.material.color.set(COLOR_HOVER);
-    hovered.userData.image.scale.set(0.24, 0.24, 1);
+  if (hits.length && !active) {
+    const g = dots.find(d => d.userData.image === hits[0].object);
+    if (hovered !== g) {
+      if (hovered) hovered.userData.image.scale.set(0.02, 0.02, 1);
+      hovered = g;
+      hovered.userData.image.scale.set(0.24, 0.24, 1);
+    }
+  } else if (!hits.length && hovered && !active) {
+    hovered.userData.image.scale.set(0.02, 0.02, 1);
+    hovered = null;
   }
-} else if (hovered && !active) {
-  resetDot(hovered);
-  hovered = null;
+
+  if (active) {
+    const p = active.userData.image.getWorldPosition(new THREE.Vector3()).normalize().multiplyScalar(2.0);
+    camera.position.lerp(p, 0.08);
+  } else {
+    camera.position.lerp(cameraHome, 0.08);
+  }
+
+  camera.lookAt(earth.position);
+  renderer.render(scene, camera);
 }
+animate();
+
 /* ===== Resize ===== */
 window.addEventListener("resize", () => {
   camera.aspect = container.clientWidth / container.clientHeight;
@@ -372,39 +181,5 @@ window.addEventListener("resize", () => {
   renderer.setSize(container.clientWidth, container.clientHeight);
 });
 </script>
-
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
