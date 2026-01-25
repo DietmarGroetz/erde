@@ -21,7 +21,7 @@ html, body {
 #searchBox {
   position: absolute;
   top: 18px;
-  left: 50%;
+  left: 50%;s
   transform: translateX(-50%);
   padding: 10px 14px;
   font-size: 14px;
@@ -139,8 +139,7 @@ function animate() {
 
   dots.forEach(d => {
     const { lat, lon, radius } = d.userData;
-    d.userData.lon = (d.userData.lon || lon) + 0.00025;
-
+ 
     d.position.set(
       Math.cos(lat) * Math.cos(d.userData.lon) * radius,
       Math.sin(lat) * radius,
@@ -185,4 +184,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
