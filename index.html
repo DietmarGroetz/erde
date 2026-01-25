@@ -242,6 +242,12 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hovered = null;
 let active = null;
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    resetFocus();
+  }
+});  
+  
 
 window.addEventListener("mousemove", e => {
   mouse.x = (e.clientX / container.clientWidth) * 2 - 1;
@@ -256,11 +262,7 @@ window.addEventListener("mousemove", e => {
       if (d !== active) resetDot(d);
     });
 
-    window.addEventListener("keydown", e => {
-  if (e.key === "Escape") {
-    resetFocus();
-  }
-});
+
     if (active.userData.image) {
       active.userData.image.scale.set(0.18, 0.18, 1);
     }
@@ -381,6 +383,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
