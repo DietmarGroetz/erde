@@ -248,6 +248,19 @@ window.addEventListener("mousemove", e => {
   mouse.y = -(e.clientY / container.clientHeight) * 2 + 1;
 });
 
+ window.addEventListener("click", () => {
+  if (hovered) {
+    active = hovered;
+
+    dots.forEach(d => {
+      if (d !== active) resetDot(d);
+    });
+
+    if (active.userData.image) {
+      active.userData.image.scale.set(0.18, 0.18, 1);
+    }
+  }
+}); 
 const searchBox = document.getElementById("searchBox");
 searchBox.addEventListener("keydown", e => {
   if (e.key === "Enter") focusUser(searchBox.value.trim());
@@ -363,6 +376,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
