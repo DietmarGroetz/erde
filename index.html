@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+F<!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
@@ -253,21 +253,20 @@ window.addEventListener("mousemove", e => {
   mouse.x = (e.clientX / container.clientWidth) * 2 - 1;
   mouse.y = -(e.clientY / container.clientHeight) * 2 + 1;
 });
+window.addEventListener("click", () => {
+  if (!hovered) return;
 
- window.addEventListener("click", () => {
-  if (hovered) {
-    active = hovered;
+  active = hovered;
 
-    dots.forEach(d => {
-      if (d !== active) resetDot(d);
-    });
+  dots.forEach(d => {
+    if (d !== active) resetDot(d);
+  });
 
-
-    if (active.userData.image) {
-      active.userData.image.scale.set(0.12, 0.12, 1);
-    }
+  if (active.userData.image) {
+    active.userData.image.scale.set(0.12, 0.12, 1);
   }
-}); 
+});
+
 const searchBox = document.getElementById("searchBox");
 searchBox.addEventListener("keydown", e => {
   if (e.key === "Enter") focusUser(searchBox.value.trim());
@@ -383,6 +382,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
