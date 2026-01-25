@@ -256,6 +256,11 @@ window.addEventListener("mousemove", e => {
       if (d !== active) resetDot(d);
     });
 
+    window.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    resetFocus();
+  }
+});
     if (active.userData.image) {
       active.userData.image.scale.set(0.18, 0.18, 1);
     }
@@ -376,6 +381,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
