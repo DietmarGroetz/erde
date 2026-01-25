@@ -343,10 +343,14 @@ if (d.userData.image) {
 
   // Hover
   raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(
+ const hits = raycaster.intersectObjects(
   dots.map(d => d.userData.image),
   false
 );
+
+if (hits.length && !active) {
+  const sprite = hits[0].object;
+  const g = dots.find(d => d.userData.image === sprite);
   if (hits.length && !active) {
     const g = hits[0].object.parent;
     if (hovered !== g) {
@@ -384,6 +388,7 @@ window.addEventListener("resize", () => {
 </body>
 
 </html>
+
 
 
 
