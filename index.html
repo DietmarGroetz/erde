@@ -107,7 +107,6 @@ for (let i = 0; i < 700; i++) {
 const radius = 1.045;
 
 g.position.set(
-  g.lookAt(0, 0, 0);
   Math.cos(lat) * Math.cos(lon) * radius,
   Math.sin(lat) * radius,
   Math.cos(lat) * Math.sin(lon) * radius
@@ -186,6 +185,7 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
 
