@@ -98,6 +98,8 @@ for (let i = 0; i < 700; i++) {
   const g = new THREE.Group();
   const img = new THREE.Sprite(userMat.clone());
   img.scale.set(0.02, 0.02, 1);
+  img.position.set(0, 0, 0.08);
+  img.material.depthTest = false;
   g.add(img);
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
@@ -183,3 +185,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
