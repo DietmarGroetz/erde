@@ -133,11 +133,18 @@ img.renderOrder = 10;
     Math.cos(lat) * Math.sin(lon) * RADIUS
   );
 
-  g.userData = { lat, lon, image: img };
-  earth.add(g);
-  dots.push(g);
-}
+const radius = 1.045;
 
+g.userData = {
+  lat,
+  lon,
+  radius,
+  image: img
+};
+
+earth.add(g);
+dots.push(g);
+  
 /* ===== Interaktion ===== */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -206,4 +213,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
