@@ -56,7 +56,7 @@ const scene = new THREE.Scene();
 const cameraHome = new THREE.Vector3(0, 0, 3.8);
 const camera = new THREE.PerspectiveCamera(
   45,
-  container.clientWidth / container.clientHeight,
+  window.innerWidth / window.innerHeight,
   0.1,
   1000
 );
@@ -64,7 +64,7 @@ camera.position.copy(cameraHome);
 
 /* ===== Renderer ===== */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -254,3 +254,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
