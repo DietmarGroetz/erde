@@ -101,6 +101,9 @@ for (let i = 0; i < 700; i++) {
   img.position.set(0, 0, 0.08);
   img.material.depthTest = false;
   g.add(img);
+  img.onBeforeRender = function(renderer, scene, camera) {
+  this.quaternion.copy(camera.quaternion);
+};
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
@@ -185,6 +188,7 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
 
