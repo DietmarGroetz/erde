@@ -47,7 +47,12 @@ const container = document.getElementById("earth-container");
 const scene = new THREE.Scene();
 
 const cameraHome = new THREE.Vector3(0, 0, 3.8);
-const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  45,
+  container.clientWidth / container.clientHeight,
+  0.1,
+  1000
+);
 camera.position.copy(cameraHome);
 
 /* ===== Renderer ===== */
@@ -69,7 +74,10 @@ scene.add(sun);
 
 /* ===== Erde ===== */
 const loader = new THREE.TextureLoader();
-const earthTex = loader.load("https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg");
+
+const earthTex = loader.load(
+  "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg"
+);
 earthTex.colorSpace = THREE.SRGBColorSpace;
 
 const earth = new THREE.Mesh(
@@ -79,41 +87,52 @@ const earth = new THREE.Mesh(
 scene.add(earth);
 
 /* ===== Wolken ===== */
-const cloudTex = loader.load("https://threejs.org/examples/textures/planets/earth_clouds_1024.png");
+const cloudTex = loader.load(
+  "https://threejs.org/examples/textures/planets/earth_clouds_1024.png"
+);
 cloudTex.colorSpace = THREE.SRGBColorSpace;
+
 const clouds = new THREE.Mesh(
   new THREE.SphereGeometry(1.01, 64, 64),
-  new THREE.MeshBasicMaterial({ map: cloudTex, transparent: true, opacity: 0.35 })
+  new THREE.MeshBasicMaterial({
+    map: cloudTex,
+    transparent: true,
+    opacity: 0.35,
+    depthWrite: false
+  })
 );
 scene.add(clouds);
 
-/* ===== User-Bild ===== */
+/* ===== User-Bilder ===== */
 const userTex = loader.load("assets/user_test.jpg");
 userTex.colorSpace = THREE.SRGBColorSpace;
 
-const userMat = new THREE.SpriteMaterial({ map: userTex, transparent: true });
+const baseUserMat = new THREE.SpriteMaterial({
+  map: userTex,
+  transparent: true
+});
 
 const dots = [];
+const RADIUS = 1.045;
+
 for (let i = 0; i < 700; i++) {
   const g = new THREE.Group();
-  const img = new THREE.Sprite(userMat.clone());
+
+  const img = new THREE.Sprite(baseUserMat.clone());
   img.scale.set(0.02, 0.02, 1);
-  img.position.set(0, 0, 0.08);
-    g.add(img);
-  img.onBeforeRender = function(renderer, scene, camera) {
-  this.quaternion.copy(camera.quaternion);
-};
+  img.position.set(0, 0, 0.06); // leicht über Oberfläche
+  g.add(img);
 
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
-const radius = 1.045;
 
-g.position.set(
-  Math.cos(lat) * Math.cos(lon) * radius,
-  Math.sin(lat) * radius,
-  Math.cos(lat) * Math.sin(lon) * radius
-);
-  g.userData = { lat, lon, radius: 1.045, image: img };
+  g.position.set(
+    Math.cos(lat) * Math.cos(lon) * RADIUS,
+    Math.sin(lat) * RADIUS,
+    Math.cos(lat) * Math.sin(lon) * RADIUS
+  );
+
+  g.userData = { lat, lon, image: img };
   earth.add(g);
   dots.push(g);
 }
@@ -130,8 +149,7 @@ window.addEventListener("mousemove", e => {
 });
 
 window.addEventListener("click", () => {
-  if (!hovered) return;
-  active = hovered;
+  if (hovered) active = hovered;
 });
 
 window.addEventListener("keydown", e => {
@@ -146,9 +164,7 @@ function animate() {
   clouds.rotation.y += 0.003;
 
   dots.forEach(d => {
-    const { lat, lon, radius } = d.userData;
-   
-  
+    d.lookAt(camera.position);
   });
 
   raycaster.setFromCamera(mouse, camera);
@@ -159,7 +175,7 @@ function animate() {
     if (hovered !== g) {
       if (hovered) hovered.userData.image.scale.set(0.02, 0.02, 1);
       hovered = g;
-      hovered.userData.image.scale.set(0.24, 0.24, 1);
+      hovered.userData.image.scale.set(0.22, 0.22, 1);
     }
   } else if (!hits.length && hovered && !active) {
     hovered.userData.image.scale.set(0.02, 0.02, 1);
@@ -167,8 +183,10 @@ function animate() {
   }
 
   if (active) {
-    const p = active.userData.image.getWorldPosition(new THREE.Vector3()).normalize().multiplyScalar(2.0);
-    camera.position.lerp(p, 0.08);
+    const target = active.getWorldPosition(new THREE.Vector3())
+      .normalize()
+      .multiplyScalar(2.2);
+    camera.position.lerp(target, 0.08);
   } else {
     camera.position.lerp(cameraHome, 0.08);
   }
@@ -187,11 +205,3 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
