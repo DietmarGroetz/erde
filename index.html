@@ -42,6 +42,13 @@ html, body {
 <script type="module">
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
 
+/* ===== KONSTANTEN ===== */
+const RADIUS = 1.045;
+
+const IMAGE_SCALE_IDLE   = 0.02;
+const IMAGE_SCALE_HOVER  = 0.22;
+const IMAGE_SCALE_ACTIVE = 0.32;
+
 /* ===== Setup ===== */
 const container = document.getElementById("earth-container");
 const scene = new THREE.Scene();
@@ -74,7 +81,6 @@ scene.add(sun);
 
 /* ===== Erde ===== */
 const loader = new THREE.TextureLoader();
-
 const earthTex = loader.load(
   "https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg"
 );
@@ -109,21 +115,21 @@ userTex.colorSpace = THREE.SRGBColorSpace;
 
 const baseUserMat = new THREE.SpriteMaterial({
   map: userTex,
-  transparent: true
+  transparent: true,
+  depthTest: false
 });
 
 const dots = [];
-const RADIUS = 1.045;
 
 for (let i = 0; i < 700; i++) {
   const g = new THREE.Group();
 
   const img = new THREE.Sprite(baseUserMat.clone());
-  img.scale.set(0.02, 0.02, 1);
-  img.position.set(0, 0, 0.06); // leicht über Oberfläche
+  img.scale.set(IMAGE_SCALE_IDLE, IMAGE_SCALE_IDLE, 1);
+  img.position.set(0, 0, 0.06);
+  img.renderOrder = 10;
   g.add(img);
-img.material.depthTest = false;
-img.renderOrder = 10;
+
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
 
@@ -133,18 +139,11 @@ img.renderOrder = 10;
     Math.cos(lat) * Math.sin(lon) * RADIUS
   );
 
-const radius = 1.045;
+  g.userData = { lat, lon, image: img };
+  earth.add(g);
+  dots.push(g);
+}
 
-g.userData = {
-  lat,
-  lon,
-  radius,
-  image: img
-};
-
-earth.add(g);
-dots.push(g);
-  }
 /* ===== Interaktion ===== */
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
@@ -157,11 +156,38 @@ window.addEventListener("mousemove", e => {
 });
 
 window.addEventListener("click", () => {
-  if (hovered) active = hovered;
+  if (!hovered) return;
+
+  active = hovered;
+
+  dots.forEach(d => {
+    if (d !== active) {
+      d.userData.image.scale.set(
+        IMAGE_SCALE_IDLE,
+        IMAGE_SCALE_IDLE,
+        1
+      );
+    }
+  });
+
+  active.userData.image.scale.set(
+    IMAGE_SCALE_ACTIVE,
+    IMAGE_SCALE_ACTIVE,
+    1
+  );
 });
 
 window.addEventListener("keydown", e => {
-  if (e.key === "Escape") active = null;
+  if (e.key === "Escape") {
+    active = null;
+    dots.forEach(d => {
+      d.userData.image.scale.set(
+        IMAGE_SCALE_IDLE,
+        IMAGE_SCALE_IDLE,
+        1
+      );
+    });
+  }
 });
 
 /* ===== Animation ===== */
@@ -171,22 +197,37 @@ function animate() {
   earth.rotation.y += 0.0014;
   clouds.rotation.y += 0.003;
 
-  dots.forEach(d => {
-    d.lookAt(camera.position);
-  });
+  dots.forEach(d => d.lookAt(camera.position));
 
   raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(dots.map(d => d.userData.image));
+  const hits = raycaster.intersectObjects(
+    dots.map(d => d.userData.image),
+    false
+  );
 
   if (hits.length && !active) {
     const g = dots.find(d => d.userData.image === hits[0].object);
     if (hovered !== g) {
-      if (hovered) hovered.userData.image.scale.set(0.02, 0.02, 1);
+      if (hovered) {
+        hovered.userData.image.scale.set(
+          IMAGE_SCALE_IDLE,
+          IMAGE_SCALE_IDLE,
+          1
+        );
+      }
       hovered = g;
-      hovered.userData.image.scale.set(0.22, 0.22, 1);
+      hovered.userData.image.scale.set(
+        IMAGE_SCALE_HOVER,
+        IMAGE_SCALE_HOVER,
+        1
+      );
     }
   } else if (!hits.length && hovered && !active) {
-    hovered.userData.image.scale.set(0.02, 0.02, 1);
+    hovered.userData.image.scale.set(
+      IMAGE_SCALE_IDLE,
+      IMAGE_SCALE_IDLE,
+      1
+    );
     hovered = null;
   }
 
@@ -194,9 +235,9 @@ function animate() {
     const target = active.getWorldPosition(new THREE.Vector3())
       .normalize()
       .multiplyScalar(2.2);
-    camera.position.lerp(target, 0.08);
+    camera.position.lerp(target, 0.06);
   } else {
-    camera.position.lerp(cameraHome, 0.08);
+    camera.position.lerp(cameraHome, 0.06);
   }
 
   camera.lookAt(earth.position);
@@ -213,6 +254,3 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
-
-
-
