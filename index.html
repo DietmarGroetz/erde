@@ -44,7 +44,6 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.mod
 
 /* ===== KONSTANTEN ===== */
 const RADIUS = 1.045;
-
 const IMAGE_SCALE_IDLE   = 0.02;
 const IMAGE_SCALE_HOVER  = 0.22;
 const IMAGE_SCALE_ACTIVE = 0.32;
@@ -139,7 +138,7 @@ for (let i = 0; i < 700; i++) {
     Math.cos(lat) * Math.sin(lon) * RADIUS
   );
 
-  g.userData = { lat, lon, image: img };
+  g.userData = { image: img };
   earth.add(g);
   dots.push(g);
 }
@@ -151,13 +150,12 @@ let hovered = null;
 let active = null;
 
 window.addEventListener("mousemove", e => {
-  mouse.x = (e.clientX / container.clientWidth) * 2 - 1;
-  mouse.y = -(e.clientY / container.clientHeight) * 2 + 1;
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
 });
 
 window.addEventListener("click", () => {
   if (!hovered) return;
-
   active = hovered;
 
   dots.forEach(d => {
@@ -180,13 +178,13 @@ window.addEventListener("click", () => {
 window.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     active = null;
-    dots.forEach(d => {
+    dots.forEach(d =>
       d.userData.image.scale.set(
         IMAGE_SCALE_IDLE,
         IMAGE_SCALE_IDLE,
         1
-      );
-    });
+      )
+    );
   }
 });
 
@@ -245,13 +243,12 @@ function animate() {
 }
 animate();
 
-/* ===== Resize ===== */
+/* ===== Resize (MOBILE FIX) ===== */
 window.addEventListener("resize", () => {
-  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(container.clientWidth, container.clientHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 </body>
 </html>
-
