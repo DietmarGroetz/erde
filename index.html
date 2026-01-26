@@ -122,7 +122,8 @@ for (let i = 0; i < 700; i++) {
   img.scale.set(0.02, 0.02, 1);
   img.position.set(0, 0, 0.06); // leicht über Oberfläche
   g.add(img);
-
+img.material.depthTest = false;
+img.renderOrder = 10;
   const lat = Math.acos(1 - 2 * Math.random()) - Math.PI / 2;
   const lon = Math.random() * Math.PI * 2;
 
@@ -205,3 +206,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
