@@ -158,6 +158,21 @@ window.addEventListener("mousemove", e => {
 window.addEventListener("click", () => {
   if (!hovered) return;
   active = hovered;
+  });
+
+  renderer.domElement.addEventListener("pointerdown", e => {
+  if (!hovered) {
+    active = null;
+
+    dots.forEach(d => {
+      d.userData.image.scale.set(
+        IMAGE_SCALE_IDLE,
+        IMAGE_SCALE_IDLE,
+        1
+      );
+    });
+  }
+});
 
   dots.forEach(d => {
     if (d !== active) {
@@ -253,4 +268,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
