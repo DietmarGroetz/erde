@@ -225,14 +225,22 @@ function animate() {
     }
   }
 
-  if (active) {
-    const target = active.getWorldPosition(new THREE.Vector3())
-      .normalize()
-      .multiplyScalar(CAMERA_DIST);
-    camera.position.lerp(target, 0.07);
-  } else {
-    camera.position.lerp(cameraHome, 0.07);
-  }
+if (active) {
+  const focusDir = active
+    .getWorldPosition(new THREE.Vector3())
+    .normalize();
+
+  const currentDir = camera.position.clone().normalize();
+
+  // sanfter Orbit (Richtungs-Interpolation)
+  const orbitDir = currentDir.lerp(focusDir, 0.05).normalize();
+
+  camera.position.copy(
+    orbitDir.multiplyScalar(CAMERA_DIST)
+  );
+} else {
+  camera.position.lerp(cameraHome, 0.07);
+}
 
   camera.lookAt(earth.position);
   renderer.render(scene, camera);
@@ -248,4 +256,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
