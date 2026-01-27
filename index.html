@@ -170,17 +170,31 @@ window.addEventListener("mousemove", e => {
 
 /* Klick / Tap (Desktop + Mobile stabil) */
 renderer.domElement.addEventListener("pointerdown", e => {
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(dots.map(d => d.userData.image));
+  const rect = renderer.domElement.getBoundingClientRect();
+
+  const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera({ x, y }, camera);
+  const hits = raycaster.intersectObjects(
+    dots.map(d => d.userData.image),
+    false
+  );
+
   if (hits.length) {
     const g = dots.find(d => d.userData.image === hits[0].object);
     resetFocus();
     active = g;
-    active.userData.image.scale.set(IMAGE_ACTIVE, IMAGE_ACTIVE, 1);
+    active.userData.image.scale.set(
+      IMAGE_ACTIVE,
+      IMAGE_ACTIVE,
+      1
+    );
   } else {
-    resetFocus();
+    resetFocus(); // 👈 DAS ist „Zurück“ auf Mobile
   }
 });
+
 
 window.addEventListener("keydown", e => {
   if (e.key === "Escape") resetFocus();
@@ -234,3 +248,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
