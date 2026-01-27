@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -180,6 +181,34 @@ window.addEventListener("keydown", e => {
     );
   }
 });
+const searchBox = document.getElementById("searchBox");
+
+searchBox.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+
+  const value = searchBox.value.trim();
+  if (!value) return;
+
+  const found = dots.find(d => d.userData.id === value);
+  if (!found) return;
+
+  active = found;
+
+  dots.forEach(d => {
+    d.userData.image.scale.set(
+      IMAGE_SCALE_IDLE,
+      IMAGE_SCALE_IDLE,
+      1
+    );
+  });
+
+  active.userData.image.scale.set(
+    IMAGE_SCALE_ACTIVE,
+    IMAGE_SCALE_ACTIVE,
+    1
+  );
+});
+  
 
 /* ===== Animation ===== */
 function animate() {
@@ -242,3 +271,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
