@@ -240,6 +240,43 @@ if (IS_TOUCH) {
 window.addEventListener("keydown", e => {
   if (e.key === "Escape") resetFocus();
 });
+/* ===== MOBILE: Finger halten = Preview ===== */
+renderer.domElement.addEventListener("pointermove", e => {
+  if (!IS_TOUCH || active) return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+  raycaster.setFromCamera({ x, y }, camera);
+  const hits = raycaster.intersectObjects(
+    dots.map(d => d.userData.image),
+    false
+  );
+
+  if (hits.length) {
+    const g = dots.find(d => d.userData.image === hits[0].object);
+    if (hovered !== g) {
+      if (hovered) {
+        hovered.userData.image.scale.set(IMAGE_IDLE, IMAGE_IDLE, 1);
+      }
+      hovered = g;
+      hovered.userData.image.scale.set(IMAGE_HOVER, IMAGE_HOVER, 1);
+    }
+  } else if (hovered) {
+    hovered.userData.image.scale.set(IMAGE_IDLE, IMAGE_IDLE, 1);
+    hovered = null;
+  }
+});
+
+/* ===== MOBILE: Finger loslassen = zurück ===== */
+renderer.domElement.addEventListener("pointerup", () => {
+  if (!IS_TOUCH || active) return;
+  if (hovered) {
+    hovered.userData.image.scale.set(IMAGE_IDLE, IMAGE_IDLE, 1);
+    hovered = null;
+  }
+});  
 
 /* ===== ANIMATION ===== */
 function animate() {
@@ -287,5 +324,6 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
