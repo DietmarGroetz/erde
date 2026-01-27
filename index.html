@@ -137,13 +137,43 @@ for (let i = 0; i < 700; i++) {
     Math.sin(lat) * RADIUS,
     Math.cos(lat) * Math.sin(lon) * RADIUS
   );
+g.userData = {
+  id: "user_" + i,
+  image: img
+};
 
-  g.userData = { image: img };
   earth.add(g);
   dots.push(g);
 }
 
 /* ===== Interaktion ===== */
+ const searchBox = document.getElementById("searchBox");
+
+searchBox.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+
+  const value = searchBox.value.trim();
+  if (!value) return;
+
+  const found = dots.find(d => d.userData.id === value);
+  if (!found) return;
+
+  active = found;
+
+  dots.forEach(d => {
+    d.userData.image.scale.set(
+      IMAGE_SCALE_IDLE,
+      IMAGE_SCALE_IDLE,
+      1
+    );
+  });
+
+  active.userData.image.scale.set(
+    IMAGE_SCALE_ACTIVE,
+    IMAGE_SCALE_ACTIVE,
+    1
+  );
+}); 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hovered = null;
@@ -270,5 +300,6 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
