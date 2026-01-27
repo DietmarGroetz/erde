@@ -149,6 +149,7 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 let hovered = null;
 let active = null;
+  
 window.addEventListener("mousemove", e => {
   mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
@@ -268,6 +269,7 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
 
 
