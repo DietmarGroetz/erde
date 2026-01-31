@@ -142,12 +142,11 @@ for (let i = 0; i < 700; i++) {
     Math.cos(lat) * Math.sin(lon) * RADIUS
   );
 
-  g.userData = {
-    id: "user_" + i,
-    image: img,
-    url: i % 5 === 0 ? "https://example.com" : null
-  };
-
+g.userData = {
+  id: "user_" + i,
+  image: img,
+  url: i === 0 ? "https://www.google.com" : null
+};
   earth.add(g);
   dots.push(g);
 }
@@ -259,3 +258,4 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
