@@ -180,8 +180,10 @@ const pointer = new THREE.Vector2();
 let hovered = null;
 let active = null;
 
-/* ===== MINI DRAG ORBIT ===== */
+/* ===== MINI DRAG ORBIT (MOBILE-SAFE) ===== */
 let isDragging = false;
+let dragMoved = false;
+const DRAG_THRESHOLD = 6;
 let lastX = 0;
 let lastY = 0;
 let earthRotVelX = 0;
@@ -214,6 +216,7 @@ searchBox.addEventListener("keydown", e => {
 renderer.domElement.addEventListener("pointerdown", e => {
   if (active) return;
   isDragging = true;
+  dragMoved = false;
   lastX = e.clientX;
   lastY = e.clientY;
 });
@@ -223,13 +226,18 @@ renderer.domElement.addEventListener("pointermove", e => {
   if (isDragging && !active) {
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
-    earthRotVelY += dx * 0.00004;
-    earthRotVelX += dy * 0.00002;
+
+    if (Math.abs(dx) + Math.abs(dy) > DRAG_THRESHOLD) {
+      dragMoved = true;
+      earthRotVelY += dx * 0.00004;
+      earthRotVelX += dy * 0.00002;
+    }
+
     lastX = e.clientX;
     lastY = e.clientY;
   }
 
-  if (active) return;
+  if (active || dragMoved) return;
 
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -259,13 +267,11 @@ renderer.domElement.addEventListener("pointermove", e => {
   }
 });
 
-/* Pointer Up */
-renderer.domElement.addEventListener("pointerup", () => {
-  isDragging = false;
-});
-
-/* Click / Tap */
+/* Pointer Up (Tap nur wenn KEIN Drag) */
 renderer.domElement.addEventListener("pointerup", e => {
+  isDragging = false;
+  if (dragMoved) return;
+
   const rect = renderer.domElement.getBoundingClientRect();
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -326,4 +332,3 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
-
