@@ -187,33 +187,47 @@ window.addEventListener("mousemove", e => {
 });
 
 /* Klick / Tap (inkl. URL) */
-renderer.domElement.addEventListener("pointerdown", e => {
-  const rect = renderer.domElement.getBoundingClientRect();
-  const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+let touchPos = null;
 
-  raycaster.setFromCamera({ x, y }, camera);
+/* Finger runter → Position merken */
+renderer.domElement.addEventListener("pointerdown", e => {
+  if (!IS_TOUCH) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  touchPos = {
+    x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+    y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+  };
+});
+
+/* Finger hoch → AUSWERTEN */
+renderer.domElement.addEventListener("pointerup", () => {
+  if (!IS_TOUCH || !touchPos) return;
+
+  raycaster.setFromCamera(touchPos, camera);
   const hits = raycaster.intersectObjects(
     dots.map(d => d.userData.image),
     false
   );
 
+  touchPos = null;
+
   if (hits.length) {
     const g = dots.find(d => d.userData.image === hits[0].object);
 
+    // 🔗 URL → direkt öffnen
     if (g.userData.url) {
       window.open(g.userData.url, "_blank");
       return;
     }
 
+    // 🎯 Fokus
     resetFocus();
     active = g;
     active.userData.image.scale.set(IMAGE_ACTIVE, IMAGE_ACTIVE, 1);
   } else {
-    resetFocus(); // Zurück (Mobile & Desktop)
+    resetFocus(); // Tap daneben = zurück
   }
 });
-
 window.addEventListener("keydown", e => {
   if (e.key === "Escape") resetFocus();
 });
@@ -264,4 +278,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
