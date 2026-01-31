@@ -236,21 +236,41 @@ function animate() {
 
   dots.forEach(d => d.lookAt(camera.position));
 
-  if (!IS_TOUCH && !active) {
-    raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObjects(dots.map(d => d.userData.image));
-    if (hits.length) {
-      const g = dots.find(d => d.userData.image === hits[0].object);
-      if (hovered !== g) {
-        if (hovered) hovered.userData.image.scale.set(IMAGE_IDLE, IMAGE_IDLE, 1);
-        hovered = g;
-        hovered.userData.image.scale.set(IMAGE_HOVER, IMAGE_HOVER, 1);
+if (!IS_TOUCH && !active) {
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(
+    dots.map(d => d.userData.image),
+    false
+  );
+
+  if (hits.length) {
+    const g = dots.find(d => d.userData.image === hits[0].object);
+
+    if (hovered !== g) {
+      if (hovered) {
+        hovered.userData.image.scale.set(
+          IMAGE_IDLE,
+          IMAGE_IDLE,
+          1
+        );
       }
-    } else if (hovered) {
-      hovered.userData.image.scale.set(IMAGE_IDLE, IMAGE_IDLE, 1);
-      hovered = null;
+
+      hovered = g;
+      hovered.userData.image.scale.set(
+        IMAGE_HOVER,
+        IMAGE_HOVER,
+        1
+      );
     }
+  } else if (hovered) {
+    hovered.userData.image.scale.set(
+      IMAGE_IDLE,
+      IMAGE_IDLE,
+      1
+    );
+    hovered = null;
   }
+} 
 
   if (active) {
     const dir = active.getWorldPosition(new THREE.Vector3()).normalize();
@@ -273,4 +293,5 @@ window.addEventListener("resize", () => {
 </script>
 </body>
 </html>
+
 
