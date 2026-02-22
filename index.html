@@ -52,6 +52,7 @@ const mouse=new THREE.Vector2();
 const clickablePlanes=[];
 let openedPlane=null;
 let loadedIds=new Set();
+let lastSpotCount = 0;
 let dragging=false;
 let lastX=0,lastY=0;
 let activePointerId=null;
@@ -126,6 +127,7 @@ earthGroup.add(clouds);
 
 /* SPOTS */
 async function loadApprovedSpots(){
+    const previousCount = loadedIds.size;   
 const {data}=await supabase
 .from("spots")
 .select("id,image_url,link_url,name")
@@ -140,7 +142,7 @@ const tex=loader.load(spot.image_url);
 tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
 
 const plane=new THREE.Mesh(
-new THREE.PlaneGeometry(0.12,0.12),
+    new THREE.CircleGeometry(0.06,32),
 new THREE.MeshBasicMaterial({
     map: tex,
     transparent: true,
@@ -178,6 +180,40 @@ originalQuaternion:plane.quaternion.clone()
 clickablePlanes.push(plane);
 earthGroup.add(plane);
 });
+
+const newCount = loadedIds.size - previousCount;
+
+if(previousCount > 0 && newCount > 0){
+    showNewSpotsBadge(newCount);
+}
+
+}
+function showNewSpotsBadge(count){
+
+const badge = document.createElement("div");
+badge.textContent = `+${count} neue Spots`;
+badge.style.position = "absolute";
+badge.style.top = "20px";
+badge.style.right = "20px";
+badge.style.padding = "6px 12px";
+badge.style.background = "rgba(255,255,255,0.08)";
+badge.style.color = "#fff";
+badge.style.fontSize = "13px";
+badge.style.borderRadius = "20px";
+badge.style.backdropFilter = "blur(6px)";
+badge.style.opacity = "0";
+badge.style.transition = "opacity 0.6s ease";
+badge.style.zIndex = "20";
+
+document.body.appendChild(badge);
+
+requestAnimationFrame(()=>badge.style.opacity="1");
+
+setTimeout(()=>{
+badge.style.opacity="0";
+setTimeout(()=>badge.remove(),600);
+},4000);
+
 }
 loadApprovedSpots();
 setInterval(loadApprovedSpots,10000);
@@ -195,48 +231,94 @@ if(i.length>0&&!i[0].object.userData.opened)
 i[0].object.scale.set(0.85,0.85,1);
 });
 
+
+
 function updateTouchHover(clientX,clientY){
+
 mouse.x=(clientX/innerWidth)*2-1;
 mouse.y=-(clientY/innerHeight)*2+1;
 raycaster.setFromCamera(mouse,camera);
+
 const i=raycaster.intersectObjects(clickablePlanes);
 const next=(i.length>0)?i[0].object:null;
 
-if(touchHoverPlane && touchHoverPlane!==next && !touchHoverPlane.userData.opened){
-touchHoverPlane.scale.set(touchHoverPlane.userData.baseScale,touchHoverPlane.userData.baseScale,1);
-}
-touchHoverPlane=next;
-if(touchHoverPlane && !touchHoverPlane.userData.opened){
-touchHoverPlane.scale.set(0.6,0.6,1);
-}
+if(touchHoverPlane && touchHoverPlane!==next){
+resetMobilePreview(touchHoverPlane);
 }
 
+touchHoverPlane = next;
+
+if(touchHoverPlane && !touchHoverPlane.userData.opened){
+mobilePreview(touchHoverPlane);
+}
+
+}
 /* TAP + CLICK */
 renderer.domElement.addEventListener("pointerdown",(e)=>{
 if(e.pointerType==="mouse" && e.button!==0) return;
 activePointerId=e.pointerId;
-try{renderer.domElement.setPointerCapture(activePointerId);}catch{}
+if(isMobile){
+dragging=false;
+}else{
 dragging=true;
+}
+if(isMobile){
+dragging=false;
+}else{
+
+}
+try{renderer.domElement.setPointerCapture(activePointerId);}catch{}
+
 dragMoved=false;
 dragStartX=lastX=e.clientX;
 dragStartY=lastY=e.clientY;
 if(e.pointerType!=="mouse") updateTouchHover(e.clientX,e.clientY);
+if(isMobile){
+mouse.x=(e.clientX/innerWidth)*2-1;
+mouse.y=-(e.clientY/innerHeight)*2+1;
+raycaster.setFromCamera(mouse,camera);
+const i=raycaster.intersectObjects(clickablePlanes);
+
+if(i.length>0){
+touchHoverPlane=i[0].object;
+mobilePreview(touchHoverPlane);
+}
+}
 });
 
 renderer.domElement.addEventListener("pointermove",(e)=>{
-if(!dragging||e.pointerId!==activePointerId)return;
+
+if(e.pointerId!==activePointerId) return;
+
 const dx=e.clientX-lastX;
 const dy=e.clientY-lastY;
+
 if(!dragMoved){
-const ddx=e.clientX-dragStartX;
-const ddy=e.clientY-dragStartY;
-if((ddx*ddx+ddy*ddy)>(DRAG_THRESHOLD_PX*DRAG_THRESHOLD_PX)) dragMoved=true;
+    const ddx=e.clientX-dragStartX;
+    const ddy=e.clientY-dragStartY;
+
+    if((ddx*ddx+ddy*ddy)>(DRAG_THRESHOLD_PX*DRAG_THRESHOLD_PX)){
+        dragMoved=true;
+
+        if(isMobile){
+            dragging=true;
+
+            if(touchHoverPlane){
+                resetMobilePreview(touchHoverPlane);
+                touchHoverPlane=null;
+            }
+        }
+    }
 }
-earthGroup.rotation.y+=dx*0.005;
-earthGroup.rotation.x+=dy*0.003;
+
+if(dragging){
+    earthGroup.rotation.y+=dx*0.005;
+    earthGroup.rotation.x+=dy*0.003;
+}
+
 lastX=e.clientX;
 lastY=e.clientY;
-if(e.pointerType!=="mouse") updateTouchHover(e.clientX,e.clientY);
+
 });
 
 function endPointer(e){
