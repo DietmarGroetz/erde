@@ -142,7 +142,7 @@ const tex=loader.load(spot.image_url);
 tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
 
 const plane=new THREE.Mesh(
-    new THREE.CircleGeometry(0.06,32),
+new THREE.CircleGeometry(0.06,32),
 new THREE.MeshBasicMaterial({
     map: tex,
     transparent: true,
