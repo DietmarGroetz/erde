@@ -51,6 +51,7 @@ const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
 const clickablePlanes=[];
 let openedPlane=null;
+let openedImageMesh = null;
 let loadedIds=new Set();
 let spotMeta = [];
 let appState = "idle"; 
@@ -187,7 +188,7 @@ marker.quaternion.setFromUnitVectors(
 marker.position.add(normal.multiplyScalar(0.12));
 
 marker.userData = {
-opened:false,
+
 hover:false,
 name:(spot.name||"").toLowerCase(),
 link:spot.link_url,
@@ -306,83 +307,106 @@ lastY = e.clientY;
 });
 
 function endPointer(e){
-if(e.pointerId!==activePointerId) return;
-try{renderer.domElement.releasePointerCapture(activePointerId);}catch{}
-dragging=false;
-activePointerId=null;
-if(touchHoverPlane && !touchHoverPlane.userData.opened){
-touchHoverPlane.scale.set(touchHoverPlane.userData.baseScale,touchHoverPlane.userData.baseScale,1);
-}
-touchHoverPlane=null;
 
-// Drag should not trigger "tap/click" behavior.
+if(e.pointerId !== activePointerId) return;
+if(appState === "exploding") return;
+
+try{
+    renderer.domElement.releasePointerCapture(activePointerId);
+}catch{}
+
+dragging = false;
+activePointerId = null;
+
 if(dragMoved) return;
 
-mouse.x=(e.clientX/innerWidth)*2-1;
-mouse.y=-(e.clientY/innerHeight)*2+1;
+mouse.x = (e.clientX/innerWidth)*2 - 1;
+mouse.y = -(e.clientY/innerHeight)*2 + 1;
+
 raycaster.setFromCamera(mouse,camera);
-const i=raycaster.intersectObjects(clickablePlanes);
+const intersects = raycaster.intersectObjects(clickablePlanes);
 
-if(i.length===0){
-if(openedPlane){
-flyBack(openedPlane);
-openedPlane=null;
-}
-if(openImageMesh){
-    scene.remove(openImageMesh);
-    openImageMesh.geometry.dispose();
-    openImageMesh.material.map.dispose();
-    openImageMesh.material.dispose();
-    openImageMesh = null;
-}
-return;
+// ----- Klick ins Leere -----
+if(intersects.length === 0){
+
+    if(appState === "open" && openedImageMesh){
+
+        scene.remove(openedImageMesh);
+        openedImageMesh.geometry.dispose();
+        openedImageMesh.material.map.dispose();
+        openedImageMesh.material.dispose();
+        openedImageMesh = null;
+
+        appState = "idle";
+    }
+
+    return;
 }
 
-const p=i[0].object;
+const p = intersects[0].object;
 
-if(!p.userData.opened){
-flyToCamera(p);
-p.userData.opened=true;
-openedPlane=p;
-}else{
-window.open(p.userData.link,"_blank");
+// ----- Bild ist offen → URL öffnen -----
+if(appState === "open"){
+
+    if(p.userData.link){
+        console.log("Link:", p.userData.link); 
+        window.open(p.userData.link, "_blank");
+    }
+
+    return;
+}
+
+// ----- Normaler Klick → Explosion -----
+if(appState === "idle"){
+    flyToCamera(p);
 }
 }
+
 renderer.domElement.addEventListener("pointerup",endPointer);
 renderer.domElement.addEventListener("pointercancel",endPointer);
 
 function flyToCamera(mesh){
 
-earthGroup.remove(mesh);
 
-const spot = spotMeta[clickablePlanes.indexOf(mesh)];
+    appState = "exploding";
+const index = clickablePlanes.indexOf(mesh);
+const spot = spotMeta[index];
 if(!spot) return;
 
-const texture = loader.load(spot.image_url);
+loader.load(spot.image_url, (texture)=>{
 
 const group = new THREE.Group();
 scene.add(group);
-const particleCount = 280;
+
 const dir = new THREE.Vector3();
 camera.getWorldDirection(dir);
 const target = camera.position.clone().add(dir.multiplyScalar(1.6));
 
+const particleCount = 220;
+
 for(let i=0;i<particleCount;i++){
 
     const piece = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.04,0.04),  
+        new THREE.PlaneGeometry(0.05,0.05),
         new THREE.MeshBasicMaterial({
             map:texture,
             transparent:true,
             side:THREE.DoubleSide
         })
-        
     );
 
     piece.position.copy(mesh.position);
-    piece.position.x += (Math.random()-0.5)*1.5;
-    piece.position.y += (Math.random()-0.5)*1.5;
-    piece.position.z += (Math.random()-0.5)*1.5;
+
+    // echte Explosion: radial nach außen
+    const explosionDir = new THREE.Vector3(
+        (Math.random()-0.5),
+        (Math.random()-0.5),
+        (Math.random()-0.5)
+    ).normalize();
+
+    const strength = 0.6 + Math.random()*0.8;
+
+    piece.position.add(explosionDir.multiplyScalar(strength));
 
     piece.rotation.set(
         Math.random()*Math.PI,
@@ -392,12 +416,23 @@ for(let i=0;i<particleCount;i++){
 
     group.add(piece);
 
+    // erst Explosion
+    gsap.to(piece.position,{
+        x: piece.position.x,
+        y: piece.position.y,
+        z: piece.position.z,
+        duration:0.4,
+        ease:"power2.out"
+    });
+
+    // dann Einsammeln zur Kamera
     gsap.to(piece.position,{
         x:target.x,
         y:target.y,
         z:target.z,
-        duration:1.6,
-        ease:"power3.out"
+        delay:0.4,
+        duration:1.2,
+        ease:"power3.inOut"
     });
 
     gsap.to(piece.rotation,{
@@ -415,22 +450,22 @@ setTimeout(()=>{
     scene.remove(group);
 
     const finalMesh = new THREE.Mesh(
-    new THREE.CircleGeometry(0.22, 64),
-    new THREE.MeshBasicMaterial({
-        map: texture,
-        transparent: true,
-        side: THREE.DoubleSide
-    })
-);
+        new THREE.CircleGeometry(0.18, 64),
+        new THREE.MeshBasicMaterial({
+            map:texture,
+            transparent:true,
+            side:THREE.DoubleSide
+        })
+    );
 
-finalMesh.position.copy(target);
-finalMesh.lookAt(camera.position);
+    finalMesh.position.copy(target);
+    finalMesh.lookAt(camera.position);
+    openedImageMesh = finalMesh;
+    scene.add(finalMesh);
+    appState = "open";
+},1600);
 
-openImageMesh = finalMesh;
-scene.add(finalMesh);
-
-},1700);
-
+});
 }
 
 function removePreview() {
