@@ -49,11 +49,12 @@ document.getElementById("earth-container").appendChild(renderer.domElement);
 
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
-const clickablePlanes=[];
+
 let openedPlane=null;
 let openedImageMesh = null;
 let loadedIds=new Set();
 let spotMeta = [];
+let instancedMarkers = null;
 let appState = "idle"; 
 // idle | hover | exploding | open
 
@@ -155,55 +156,48 @@ if (!data || data.length === 0) {
 
 spotMeta = data;
 
-data.forEach((spot)=>{
+const count = data.length;
 
-if(loadedIds.has(spot.id))return;
-loadedIds.add(spot.id);
+const markerGeometry = new THREE.SphereGeometry(0.015, 16, 16);
 
-const marker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.015, 16, 16),
-    new THREE.MeshStandardMaterial({
-        color: 0xb0b0b0,
-        metalness: 0.9,
-        roughness: 0.25
-    })
-);
-
-const lat=(Math.random()-0.5)*Math.PI;
-const lon=Math.random()*Math.PI*2;
-const r=1;
-
-marker.position.set(
-r*Math.cos(lat)*Math.cos(lon),
-r*Math.sin(lat),
-r*Math.cos(lat)*Math.sin(lon)
-);
-
-const normal = marker.position.clone().normalize();
-marker.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0,0,1),
-    normal
-);
-
-marker.position.add(normal.multiplyScalar(0.12));
-
-marker.userData = {
-
-hover:false,
-name:(spot.name||"").toLowerCase(),
-link:spot.link_url,
-baseScale: 1,
-originalPosition: marker.position.clone(),
-originalQuaternion: marker.quaternion.clone()
-};
-
-clickablePlanes.push(marker);
-earthGroup.add(marker);
-
+const markerMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb0b0b0,
+    metalness: 0.9,
+    roughness: 0.25
 });
+
+instancedMarkers = new THREE.InstancedMesh(
+    markerGeometry,
+    markerMaterial,
+    count
+);
+
+const dummy = new THREE.Object3D();
+for (let i = 0; i < count; i++) {
+
+const lat = (Math.random() - 0.5) * Math.PI;
+const lon = Math.random() * Math.PI * 2;
+const r = 1;
+
+dummy.position.set(
+    r * Math.cos(lat) * Math.cos(lon),
+    r * Math.sin(lat),
+    r * Math.cos(lat) * Math.sin(lon)
+);
+
+const normal = dummy.position.clone().normalize();
+dummy.position.add(normal.multiplyScalar(0.12));
+
+dummy.lookAt(normal.clone().multiplyScalar(2));
+
+dummy.updateMatrix();
+
+instancedMarkers.setMatrixAt(i, dummy.matrix);
+}
+earthGroup.add(instancedMarkers);
 }
 loadApprovedSpots();
-setInterval(loadApprovedSpots,10000);
+
 
 
 
@@ -211,7 +205,7 @@ function updateTouchHover(clientX,clientY){
 mouse.x=(clientX/innerWidth)*2-1;
 mouse.y=-(clientY/innerHeight)*2+1;
 raycaster.setFromCamera(mouse,camera);
-const i=raycaster.intersectObjects(clickablePlanes);
+const i = raycaster.intersectObject(instancedMarkers);
 const next=(i.length>0)?i[0].object:null;
 
 if(touchHoverPlane && touchHoverPlane!==next && !touchHoverPlane.userData.opened){
@@ -238,26 +232,29 @@ if(e.pointerType!=="mouse") updateTouchHover(e.clientX,e.clientY);
 renderer.domElement.addEventListener("pointermove",(e)=>{
 
 // ----- Hover Teil -----
-if(e.pointerType === "mouse") {
+if(e.pointerType === "mouse" && appState === "idle") {
 
     mouse.x = (e.clientX / innerWidth) * 2 - 1;
     mouse.y = -(e.clientY / innerHeight) * 2 + 1;
 
     raycaster.setFromCamera(mouse, camera);
 
-    const intersects = raycaster.intersectObjects(clickablePlanes);
+    let intersects = [];
 
+if(instancedMarkers){
+    intersects = raycaster.intersectObject(instancedMarkers);
+}console.log("hover intersects:", intersects.length);
     if (intersects.length === 0) {
         removePreview();
     } else {
 
-        const mesh = intersects[0].object;
+        const index = intersects[0].instanceId;
 
-        if (mesh !== currentHoverMesh) {
+        if (index !== currentHoverMesh) {
 
-            currentHoverMesh = mesh;
+            currentHoverMesh = index;
 
-            const index = clickablePlanes.indexOf(mesh);
+           
             const spot = spotMeta[index];
             if (!spot) return;
 
@@ -275,14 +272,23 @@ if(e.pointerType === "mouse") {
 
                 previewMesh = new THREE.Mesh(geometry, material);
 
-                const dir = new THREE.Vector3();
-camera.getWorldDirection(dir);
+                const matrix = new THREE.Matrix4();
+instancedMarkers.getMatrixAt(index, matrix);
+
+const localPosition = new THREE.Vector3();
+localPosition.setFromMatrixPosition(matrix);
+
+const worldPosition = localPosition.clone();
+earthGroup.localToWorld(worldPosition);
+
+const normal = worldPosition.clone().normalize();
 
 previewMesh.position.copy(
-    camera.position.clone().add(
-        dir.multiplyScalar(1.4)
+    worldPosition.add(
+        normal.multiplyScalar(0.18)
     )
-);
+);          
+
 
 previewMesh.lookAt(camera.position);    
 
@@ -324,8 +330,11 @@ mouse.x = (e.clientX/innerWidth)*2 - 1;
 mouse.y = -(e.clientY/innerHeight)*2 + 1;
 
 raycaster.setFromCamera(mouse,camera);
-const intersects = raycaster.intersectObjects(clickablePlanes);
+let intersects = [];
 
+if(instancedMarkers){
+    intersects = raycaster.intersectObject(instancedMarkers);
+}
 // ----- Klick ins Leere -----
 if(intersects.length === 0){
 
@@ -343,13 +352,13 @@ if(intersects.length === 0){
     return;
 }
 
-const p = intersects[0].object;
+const index = intersects[0].instanceId;
 
 // ----- Bild ist offen → URL öffnen -----
 if(appState === "open"){
 
     if(p.userData.link){
-        console.log("Link:", p.userData.link); 
+        
         window.open(p.userData.link, "_blank");
     }
 
@@ -358,112 +367,109 @@ if(appState === "open"){
 
 // ----- Normaler Klick → Explosion -----
 if(appState === "idle"){
-    flyToCamera(p);
+    flyToCamera(index); 
 }
 }
 
 renderer.domElement.addEventListener("pointerup",endPointer);
 renderer.domElement.addEventListener("pointercancel",endPointer);
 
-function flyToCamera(mesh){
+function flyToCamera(index){
 
-
-    appState = "exploding";
-const index = clickablePlanes.indexOf(mesh);
+appState = "exploding";
+removePreview();
+currentHoverMesh = null;
 const spot = spotMeta[index];
 if(!spot) return;
 
 loader.load(spot.image_url, (texture)=>{
 
-const group = new THREE.Group();
-scene.add(group);
+    // Position der Instanz holen
+    const matrix = new THREE.Matrix4();
+    instancedMarkers.getMatrixAt(index, matrix);
 
-const dir = new THREE.Vector3();
-camera.getWorldDirection(dir);
-const target = camera.position.clone().add(dir.multiplyScalar(1.6));
+    const position = new THREE.Vector3();
+    position.setFromMatrixPosition(matrix);
 
-const particleCount = 220;
+    const group = new THREE.Group();
+    scene.add(group);
 
-for(let i=0;i<particleCount;i++){
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const target = camera.position.clone().add(dir.multiplyScalar(1.6));
 
-    const piece = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.05,0.05),
-        new THREE.MeshBasicMaterial({
-            map:texture,
-            transparent:true,
-            side:THREE.DoubleSide
-        })
-    );
+    const particleCount = 220;
 
-    piece.position.copy(mesh.position);
+    for(let i=0;i<particleCount;i++){
 
-    // echte Explosion: radial nach außen
-    const explosionDir = new THREE.Vector3(
-        (Math.random()-0.5),
-        (Math.random()-0.5),
-        (Math.random()-0.5)
-    ).normalize();
+        const piece = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.05,0.05),
+            new THREE.MeshBasicMaterial({
+                map:texture,
+                transparent:true,
+                side:THREE.DoubleSide
+            })
+        );
 
-    const strength = 0.6 + Math.random()*0.8;
+        piece.position.copy(position);
 
-    piece.position.add(explosionDir.multiplyScalar(strength));
+        const explosionDir = new THREE.Vector3(
+            (Math.random()-0.5),
+            (Math.random()-0.5),
+            (Math.random()-0.5)
+        ).normalize();
 
-    piece.rotation.set(
-        Math.random()*Math.PI,
-        Math.random()*Math.PI,
-        Math.random()*Math.PI
-    );
+        const strength = 0.6 + Math.random()*0.8;
 
-    group.add(piece);
+        piece.position.add(explosionDir.multiplyScalar(strength));
 
-    // erst Explosion
-    gsap.to(piece.position,{
-        x: piece.position.x,
-        y: piece.position.y,
-        z: piece.position.z,
-        duration:0.4,
-        ease:"power2.out"
-    });
+        piece.rotation.set(
+            Math.random()*Math.PI,
+            Math.random()*Math.PI,
+            Math.random()*Math.PI
+        );
 
-    // dann Einsammeln zur Kamera
-    gsap.to(piece.position,{
-        x:target.x,
-        y:target.y,
-        z:target.z,
-        delay:0.4,
-        duration:1.2,
-        ease:"power3.inOut"
-    });
+        group.add(piece);
 
-    gsap.to(piece.rotation,{
-        x:0,y:0,z:0,
-        duration:1.6,
-        ease:"power3.out"
-    });
-}
+        gsap.to(piece.position,{
+            x:target.x,
+            y:target.y,
+            z:target.z,
+            delay:0.4,
+            duration:1.2,
+            ease:"power3.inOut"
+        });
 
+        gsap.to(piece.rotation,{
+            x:0,y:0,z:0,
+            duration:1.6,
+            ease:"power3.out"
+        });
+    }
 
+    setTimeout(()=>{
 
-setTimeout(()=>{
+        group.clear();
+        scene.remove(group);
 
-    group.clear();
-    scene.remove(group);
+        const finalMesh = new THREE.Mesh(
+            new THREE.CircleGeometry(0.18, 64),
+            new THREE.MeshBasicMaterial({
+                map:texture,
+                transparent:true,
+                side:THREE.DoubleSide
+            })
+        );
 
-    const finalMesh = new THREE.Mesh(
-        new THREE.CircleGeometry(0.18, 64),
-        new THREE.MeshBasicMaterial({
-            map:texture,
-            transparent:true,
-            side:THREE.DoubleSide
-        })
-    );
+        finalMesh.position.copy(target);
+        finalMesh.lookAt(camera.position);
 
-    finalMesh.position.copy(target);
-    finalMesh.lookAt(camera.position);
-    openedImageMesh = finalMesh;
-    scene.add(finalMesh);
-    appState = "open";
-},1600);
+        openedImageMesh = finalMesh;
+        scene.add(finalMesh);
+
+        appState = "open";
+
+    },1600);
 
 });
 }
@@ -493,13 +499,7 @@ mesh.userData.opened=false;
 document.getElementById("search")
 .addEventListener("input",(e)=>{
 const q=e.target.value.toLowerCase();
-clickablePlanes.forEach(p=>{
-if(p.userData.name.includes(q)&&q.length>1){
-const v=p.userData.originalPosition.clone().normalize();
-earthGroup.rotation.y=-Math.atan2(v.x,v.z);
-earthGroup.rotation.x=Math.asin(v.y);
-}
-});
+
 });
 
 /* ANIMATE */
