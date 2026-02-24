@@ -53,6 +53,11 @@ const clickablePlanes=[];
 let openedPlane=null;
 let loadedIds=new Set();
 let spotMeta = [];
+let appState = "idle"; 
+// idle | hover | exploding | open
+
+let hoveredMarker = null;
+let openImageMesh = null;
 let previewMesh = null;
 let currentHoverMesh = null;
 let dragging=false;
@@ -152,16 +157,18 @@ data.forEach((spot)=>{
 if(loadedIds.has(spot.id))return;
 loadedIds.add(spot.id);
 
-const marker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.025, 12, 12),
-    new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 1,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    })
-);
+const spriteTexture = loader.load("https://threejs.org/examples/textures/sprites/disc.png");
+
+const markerMaterial = new THREE.SpriteMaterial({
+    map: spriteTexture,
+    color: 0xffffff,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+});
+
+const marker = new THREE.Sprite(markerMaterial);
+marker.scale.set(0.05, 0.05, 1);
 
 const lat=(Math.random()-0.5)*Math.PI;
 const lon=Math.random()*Math.PI*2;
@@ -259,7 +266,7 @@ if(e.pointerType === "mouse") {
 
                 removePreview();
 
-                const geometry = new THREE.CircleGeometry(0.08, 32);
+                const geometry = new THREE.CircleGeometry(0.07, 32);
 
                 const material = new THREE.MeshBasicMaterial({
                     map: texture,
@@ -269,20 +276,18 @@ if(e.pointerType === "mouse") {
 
                 previewMesh = new THREE.Mesh(geometry, material);
 
-                const normal = mesh.position.clone().normalize();
+                const dir = new THREE.Vector3();
+camera.getWorldDirection(dir);
 
-                previewMesh.position.copy(
-                    mesh.position.clone().add(
-                        normal.multiplyScalar(0.15)
-                    )
-                );
+previewMesh.position.copy(
+    camera.position.clone().add(
+        dir.multiplyScalar(1.4)
+    )
+);
 
-                previewMesh.quaternion.setFromUnitVectors(
-                    new THREE.Vector3(0,0,1),
-                    normal
-                );
+previewMesh.lookAt(camera.position);    
 
-                earthGroup.add(previewMesh);
+                scene.add(previewMesh);
             });
         }
     }
@@ -324,6 +329,13 @@ if(i.length===0){
 if(openedPlane){
 flyBack(openedPlane);
 openedPlane=null;
+}
+if(openImageMesh){
+    scene.remove(openImageMesh);
+    openImageMesh.geometry.dispose();
+    openImageMesh.material.map.dispose();
+    openImageMesh.material.dispose();
+    openImageMesh = null;
 }
 return;
 }
@@ -405,7 +417,7 @@ setTimeout(()=>{
     scene.remove(group);
 
     const finalMesh = new THREE.Mesh(
-    new THREE.CircleGeometry(0.4, 64),
+    new THREE.CircleGeometry(0.22, 64),
     new THREE.MeshBasicMaterial({
         map: texture,
         transparent: true,
@@ -416,6 +428,7 @@ setTimeout(()=>{
 finalMesh.position.copy(target);
 finalMesh.lookAt(camera.position);
 
+openImageMesh = finalMesh;
 scene.add(finalMesh);
 
 },1700);
@@ -428,7 +441,7 @@ currentHoverMesh = null;
 
 if (!previewMesh) return;
 
-earthGroup.remove(previewMesh);
+scene.remove(previewMesh);
 previewMesh.geometry.dispose();
 previewMesh.material.map.dispose();
 previewMesh.material.dispose();
@@ -459,7 +472,7 @@ earthGroup.rotation.x=Math.asin(v.y);
 /* ANIMATE */
 function animate(){
 requestAnimationFrame(animate);
-if(!dragging && !previewMesh) {
+if(!dragging) {
     earthGroup.rotation.y += 0.0014;
 }
 clouds.rotation.y+=0.003;
