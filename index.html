@@ -49,10 +49,19 @@ document.getElementById("earth-container").appendChild(renderer.domElement);
 
 const raycaster=new THREE.Raycaster();
 const mouse=new THREE.Vector2();
-const clickablePlanes=[];
+
 let openedPlane=null;
+let openedImageMesh = null;
 let loadedIds=new Set();
-let lastSpotCount = 0;
+let spotMeta = [];
+let instancedMarkers = null;
+let appState = "idle"; 
+// idle | hover | exploding | open
+
+let hoveredMarker = null;
+let openImageMesh = null;
+let previewMesh = null;
+let currentHoverMesh = null;
 let dragging=false;
 let lastX=0,lastY=0;
 let activePointerId=null;
@@ -67,7 +76,9 @@ const earthGroup=new THREE.Group();
 scene.add(earthGroup);
 
 scene.add(new THREE.AmbientLight(0xffffff,0.4));
-
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(3, 2, 5);
+scene.add(dirLight);
 /* 🌌 STARS */
 const starGeo=new THREE.BufferGeometry();
 const verts=[];
@@ -127,308 +138,354 @@ earthGroup.add(clouds);
 
 /* SPOTS */
 async function loadApprovedSpots(){
-    const previousCount = loadedIds.size;   
-const {data}=await supabase
-.from("spots")
-.select("id,image_url,link_url,name")
-.eq("approved",true);
+    
+    const { data, error } = await supabase
+    .from("spots")
+    .select("id,image_url,link_url,name")
+    .eq("approved", true);
 
-data.forEach((spot)=>{
+if (error) {
+    console.log(error);
+    return;
+}
 
-if(loadedIds.has(spot.id))return;
-loadedIds.add(spot.id);
+if (!data || data.length === 0) {
+    console.log("No spots found");
+    return;
+}
 
-const tex=loader.load(spot.image_url);
-tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+spotMeta = data;
 
-const plane=new THREE.Mesh(
-new THREE.CircleGeometry(0.06,32),
-new THREE.MeshBasicMaterial({
-    map: tex,
-    transparent: true,
-    side: THREE.DoubleSide,
-    toneMapped: false
-})
-);
-const baseScale=isMobile?0.4:0.25;
-plane.scale.set(baseScale,baseScale,1);
+const count = data.length;
 
-const lat=(Math.random()-0.5)*Math.PI;
-const lon=Math.random()*Math.PI*2;
-const r=1;
+const markerGeometry = new THREE.SphereGeometry(0.015, 16, 16);
 
-plane.position.set(
-r*Math.cos(lat)*Math.cos(lon),
-r*Math.sin(lat),
-r*Math.cos(lat)*Math.sin(lon)
-);
-
-const normal=plane.position.clone().normalize();
-plane.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
-plane.position.add(normal.multiplyScalar(0.12));
-
-plane.userData={
-opened:false,
-hover:false,
-name:(spot.name||"").toLowerCase(),
-link:spot.link_url,
-baseScale,
-originalPosition:plane.position.clone(),
-originalQuaternion:plane.quaternion.clone()
-};
-
-clickablePlanes.push(plane);
-earthGroup.add(plane);
+const markerMaterial = new THREE.MeshStandardMaterial({
+    color: 0xb0b0b0,
+    metalness: 0.9,
+    roughness: 0.25
 });
 
-const newCount = loadedIds.size - previousCount;
+instancedMarkers = new THREE.InstancedMesh(
+    markerGeometry,
+    markerMaterial,
+    count
+);
 
-if(previousCount > 0 && newCount > 0){
-    showNewSpotsBadge(newCount);
+const dummy = new THREE.Object3D();
+for (let i = 0; i < count; i++) {
+
+const lat = (Math.random() - 0.5) * Math.PI;
+const lon = Math.random() * Math.PI * 2;
+const r = 1;
+
+dummy.position.set(
+    r * Math.cos(lat) * Math.cos(lon),
+    r * Math.sin(lat),
+    r * Math.cos(lat) * Math.sin(lon)
+);
+
+const normal = dummy.position.clone().normalize();
+dummy.position.add(normal.multiplyScalar(0.12));
+
+dummy.lookAt(normal.clone().multiplyScalar(2));
+
+dummy.updateMatrix();
+
+instancedMarkers.setMatrixAt(i, dummy.matrix);
 }
-
-}
-function showNewSpotsBadge(count){
-
-const badge = document.createElement("div");
-badge.textContent = `+${count} neue Spots`;
-badge.style.position = "absolute";
-badge.style.top = "20px";
-badge.style.right = "20px";
-badge.style.padding = "6px 12px";
-badge.style.background = "rgba(255,255,255,0.08)";
-badge.style.color = "#fff";
-badge.style.fontSize = "13px";
-badge.style.borderRadius = "20px";
-badge.style.backdropFilter = "blur(6px)";
-badge.style.opacity = "0";
-badge.style.transition = "opacity 0.6s ease";
-badge.style.zIndex = "20";
-
-document.body.appendChild(badge);
-
-requestAnimationFrame(()=>badge.style.opacity="1");
-
-setTimeout(()=>{
-badge.style.opacity="0";
-setTimeout(()=>badge.remove(),600);
-},4000);
-
+earthGroup.add(instancedMarkers);
 }
 loadApprovedSpots();
-setInterval(loadApprovedSpots,10000);
 
-/* HOVER DESKTOP */
-renderer.domElement.addEventListener("mousemove",(e)=>{
-mouse.x=(e.clientX/innerWidth)*2-1;
-mouse.y=-(e.clientY/innerHeight)*2+1;
-raycaster.setFromCamera(mouse,camera);
-const i=raycaster.intersectObjects(clickablePlanes);
-clickablePlanes.forEach(p=>{
-if(!p.userData.opened)p.scale.set(p.userData.baseScale,p.userData.baseScale,1);
-});
-if(i.length>0&&!i[0].object.userData.opened)
-i[0].object.scale.set(0.85,0.85,1);
-});
 
 
 
 function updateTouchHover(clientX,clientY){
-
 mouse.x=(clientX/innerWidth)*2-1;
 mouse.y=-(clientY/innerHeight)*2+1;
 raycaster.setFromCamera(mouse,camera);
-
-const i=raycaster.intersectObjects(clickablePlanes);
+const i = raycaster.intersectObject(instancedMarkers);
 const next=(i.length>0)?i[0].object:null;
 
-if(touchHoverPlane && touchHoverPlane!==next){
-resetMobilePreview(touchHoverPlane);
+if(touchHoverPlane && touchHoverPlane!==next && !touchHoverPlane.userData.opened){
+touchHoverPlane.scale.set(touchHoverPlane.userData.baseScale,touchHoverPlane.userData.baseScale,1);
 }
-
-touchHoverPlane = next;
-
+touchHoverPlane=next;
 if(touchHoverPlane && !touchHoverPlane.userData.opened){
-mobilePreview(touchHoverPlane);
+touchHoverPlane.scale.set(0.6,0.6,1);
+}
 }
 
-}
 /* TAP + CLICK */
 renderer.domElement.addEventListener("pointerdown",(e)=>{
 if(e.pointerType==="mouse" && e.button!==0) return;
 activePointerId=e.pointerId;
-if(isMobile){
-dragging=false;
-}else{
-dragging=true;
-}
-if(isMobile){
-dragging=false;
-}else{
-
-}
 try{renderer.domElement.setPointerCapture(activePointerId);}catch{}
-
+dragging=true;
 dragMoved=false;
 dragStartX=lastX=e.clientX;
 dragStartY=lastY=e.clientY;
 if(e.pointerType!=="mouse") updateTouchHover(e.clientX,e.clientY);
-if(isMobile){
-mouse.x=(e.clientX/innerWidth)*2-1;
-mouse.y=-(e.clientY/innerHeight)*2+1;
-raycaster.setFromCamera(mouse,camera);
-const i=raycaster.intersectObjects(clickablePlanes);
-
-if(i.length>0){
-touchHoverPlane=i[0].object;
-mobilePreview(touchHoverPlane);
-}
-}
 });
 
 renderer.domElement.addEventListener("pointermove",(e)=>{
 
-if(e.pointerId!==activePointerId) return;
+// ----- Hover Teil -----
+if(e.pointerType === "mouse" && appState === "idle") {
 
-const dx=e.clientX-lastX;
-const dy=e.clientY-lastY;
+    mouse.x = (e.clientX / innerWidth) * 2 - 1;
+    mouse.y = -(e.clientY / innerHeight) * 2 + 1;
 
-if(!dragMoved){
-    const ddx=e.clientX-dragStartX;
-    const ddy=e.clientY-dragStartY;
+    raycaster.setFromCamera(mouse, camera);
 
-    if((ddx*ddx+ddy*ddy)>(DRAG_THRESHOLD_PX*DRAG_THRESHOLD_PX)){
-        dragMoved=true;
+    let intersects = [];
 
-        if(isMobile){
-            dragging=true;
+if(instancedMarkers){
+    intersects = raycaster.intersectObject(instancedMarkers);
+}console.log("hover intersects:", intersects.length);
+    if (intersects.length === 0) {
+        removePreview();
+    } else {
 
-            if(touchHoverPlane){
-                resetMobilePreview(touchHoverPlane);
-                touchHoverPlane=null;
-            }
+        const index = intersects[0].instanceId;
+
+        if (index !== currentHoverMesh) {
+
+            currentHoverMesh = index;
+
+           
+            const spot = spotMeta[index];
+            if (!spot) return;
+
+            loader.load(spot.image_url, (texture) => {
+
+                removePreview();
+
+                const geometry = new THREE.CircleGeometry(0.07, 32);
+
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide
+                });
+
+                previewMesh = new THREE.Mesh(geometry, material);
+
+                const matrix = new THREE.Matrix4();
+instancedMarkers.getMatrixAt(index, matrix);
+
+const localPosition = new THREE.Vector3();
+localPosition.setFromMatrixPosition(matrix);
+
+const worldPosition = localPosition.clone();
+earthGroup.localToWorld(worldPosition);
+
+const normal = worldPosition.clone().normalize();
+
+previewMesh.position.copy(
+    worldPosition.add(
+        normal.multiplyScalar(0.18)
+    )
+);          
+
+
+previewMesh.lookAt(camera.position);    
+
+                scene.add(previewMesh);
+            });
         }
     }
 }
 
-if(dragging){
-    earthGroup.rotation.y+=dx*0.005;
-    earthGroup.rotation.x+=dy*0.003;
-}
+// ----- Drag Teil -----
+if(!dragging || e.pointerId !== activePointerId) return;
 
-lastX=e.clientX;
-lastY=e.clientY;
+const dx = e.clientX - lastX;
+const dy = e.clientY - lastY;
+
+earthGroup.rotation.y += dx * 0.005;
+earthGroup.rotation.x += dy * 0.003;
+
+lastX = e.clientX;
+lastY = e.clientY;
 
 });
 
 function endPointer(e){
-if(e.pointerId!==activePointerId) return;
-try{renderer.domElement.releasePointerCapture(activePointerId);}catch{}
-dragging=false;
-activePointerId=null;
-if(touchHoverPlane && !touchHoverPlane.userData.opened){
-touchHoverPlane.scale.set(touchHoverPlane.userData.baseScale,touchHoverPlane.userData.baseScale,1);
-}
-touchHoverPlane=null;
 
-// Drag should not trigger "tap/click" behavior.
+if(e.pointerId !== activePointerId) return;
+if(appState === "exploding") return;
+
+try{
+    renderer.domElement.releasePointerCapture(activePointerId);
+}catch{}
+
+dragging = false;
+activePointerId = null;
+
 if(dragMoved) return;
 
-mouse.x=(e.clientX/innerWidth)*2-1;
-mouse.y=-(e.clientY/innerHeight)*2+1;
+mouse.x = (e.clientX/innerWidth)*2 - 1;
+mouse.y = -(e.clientY/innerHeight)*2 + 1;
+
 raycaster.setFromCamera(mouse,camera);
-const i=raycaster.intersectObjects(clickablePlanes);
+let intersects = [];
 
-if(i.length===0){
-if(openedPlane){
-flyBack(openedPlane);
-openedPlane=null;
+if(instancedMarkers){
+    intersects = raycaster.intersectObject(instancedMarkers);
 }
-return;
+// ----- Klick ins Leere -----
+if(intersects.length === 0){
+
+    if(appState === "open" && openedImageMesh){
+
+        scene.remove(openedImageMesh);
+        openedImageMesh.geometry.dispose();
+        openedImageMesh.material.map.dispose();
+        openedImageMesh.material.dispose();
+        openedImageMesh = null;
+
+        appState = "idle";
+    }
+
+    return;
 }
 
-const p=i[0].object;
+const index = intersects[0].instanceId;
 
-if(!p.userData.opened){
-flyToCamera(p);
-p.userData.opened=true;
-openedPlane=p;
-}else{
-window.open(p.userData.link,"_blank");
+// ----- Bild ist offen → URL öffnen -----
+if(appState === "open"){
+
+    if(p.userData.link){
+        
+        window.open(p.userData.link, "_blank");
+    }
+
+    return;
+}
+
+// ----- Normaler Klick → Explosion -----
+if(appState === "idle"){
+    flyToCamera(index); 
 }
 }
+
 renderer.domElement.addEventListener("pointerup",endPointer);
 renderer.domElement.addEventListener("pointercancel",endPointer);
 
-function flyToCamera(mesh){
+function flyToCamera(index){
 
-earthGroup.remove(mesh);
+appState = "exploding";
+removePreview();
+currentHoverMesh = null;
+const spot = spotMeta[index];
+if(!spot) return;
 
-const texture = mesh.material.map;
+loader.load(spot.image_url, (texture)=>{
 
-const group = new THREE.Group();
-scene.add(group);
-const particleCount = 280;
-const dir = new THREE.Vector3();
-camera.getWorldDirection(dir);
-const target = camera.position.clone().add(dir.multiplyScalar(1.6));
+    // Position der Instanz holen
+    const matrix = new THREE.Matrix4();
+    instancedMarkers.getMatrixAt(index, matrix);
 
-for(let i=0;i<particleCount;i++){
+    const position = new THREE.Vector3();
+    position.setFromMatrixPosition(matrix);
 
-    const piece = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.04,0.04),  
-        new THREE.MeshBasicMaterial({
-            map:texture,
-            transparent:true,
-            side:THREE.DoubleSide
-        })
-    );
+    const group = new THREE.Group();
+    scene.add(group);
 
-    piece.position.copy(mesh.position);
-    piece.position.x += (Math.random()-0.5)*1.5;
-    piece.position.y += (Math.random()-0.5)*1.5;
-    piece.position.z += (Math.random()-0.5)*1.5;
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const target = camera.position.clone().add(dir.multiplyScalar(1.6));
 
-    piece.rotation.set(
-        Math.random()*Math.PI,
-        Math.random()*Math.PI,
-        Math.random()*Math.PI
-    );
+    const particleCount = 220;
 
-    group.add(piece);
+    for(let i=0;i<particleCount;i++){
 
-    gsap.to(piece.position,{
-        x:target.x,
-        y:target.y,
-        z:target.z,
-        duration:1.6,
-        ease:"power3.out"
-    });
+        const piece = new THREE.Mesh(
+            new THREE.PlaneGeometry(0.05,0.05),
+            new THREE.MeshBasicMaterial({
+                map:texture,
+                transparent:true,
+                side:THREE.DoubleSide
+            })
+        );
 
-    gsap.to(piece.rotation,{
-        x:0,y:0,z:0,
-        duration:1.6,
-        ease:"power3.out"
-    });
+        piece.position.copy(position);
+
+        const explosionDir = new THREE.Vector3(
+            (Math.random()-0.5),
+            (Math.random()-0.5),
+            (Math.random()-0.5)
+        ).normalize();
+
+        const strength = 0.6 + Math.random()*0.8;
+
+        piece.position.add(explosionDir.multiplyScalar(strength));
+
+        piece.rotation.set(
+            Math.random()*Math.PI,
+            Math.random()*Math.PI,
+            Math.random()*Math.PI
+        );
+
+        group.add(piece);
+
+        gsap.to(piece.position,{
+            x:target.x,
+            y:target.y,
+            z:target.z,
+            delay:0.4,
+            duration:1.2,
+            ease:"power3.inOut"
+        });
+
+        gsap.to(piece.rotation,{
+            x:0,y:0,z:0,
+            duration:1.6,
+            ease:"power3.out"
+        });
+    }
+
+    setTimeout(()=>{
+
+        group.clear();
+        scene.remove(group);
+
+        const finalMesh = new THREE.Mesh(
+            new THREE.CircleGeometry(0.18, 64),
+            new THREE.MeshBasicMaterial({
+                map:texture,
+                transparent:true,
+                side:THREE.DoubleSide
+            })
+        );
+
+        finalMesh.position.copy(target);
+        finalMesh.lookAt(camera.position);
+
+        openedImageMesh = finalMesh;
+        scene.add(finalMesh);
+
+        appState = "open";
+
+    },1600);
+
+});
 }
 
-mesh.visible = false;
+function removePreview() {
 
-setTimeout(()=>{
+currentHoverMesh = null;
 
-    group.clear();
-    scene.remove(group);
+if (!previewMesh) return;
 
-    mesh.position.copy(target);
-    mesh.lookAt(camera.position);
-    mesh.scale.set(2,2,2);
-    mesh.visible = true;
-    scene.add(mesh);
-
-},1700);
-
+scene.remove(previewMesh);
+previewMesh.geometry.dispose();
+previewMesh.material.map.dispose();
+previewMesh.material.dispose();
+previewMesh = null;
 }
-
 function flyBack(mesh){
 scene.remove(mesh);
 earthGroup.add(mesh);
@@ -442,19 +499,15 @@ mesh.userData.opened=false;
 document.getElementById("search")
 .addEventListener("input",(e)=>{
 const q=e.target.value.toLowerCase();
-clickablePlanes.forEach(p=>{
-if(p.userData.name.includes(q)&&q.length>1){
-const v=p.userData.originalPosition.clone().normalize();
-earthGroup.rotation.y=-Math.atan2(v.x,v.z);
-earthGroup.rotation.x=Math.asin(v.y);
-}
-});
+
 });
 
 /* ANIMATE */
 function animate(){
 requestAnimationFrame(animate);
-if(!dragging) earthGroup.rotation.y+=0.0014;
+if(!dragging) {
+    earthGroup.rotation.y += 0.0014;
+}
 clouds.rotation.y+=0.003;
 camera.lookAt(earthGroup.position);
 renderer.render(scene,camera);
