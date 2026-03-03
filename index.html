@@ -46,6 +46,48 @@ const supabase = window.supabase.createClient(
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,1000);
 camera.position.set(0,0,3.8);
+// ---------- MOBILE PARALLAX WITH PERMISSION ----------
+const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+if (isMobile && typeof DeviceOrientationEvent !== "undefined") {
+
+    const enableParallax = () => {
+
+        window.addEventListener("deviceorientation",(e)=>{
+
+            if(e.gamma === null || e.beta === null) return;
+
+            const tiltX = e.gamma * 0.003;
+            const tiltY = e.beta * 0.003;
+
+            earthGroup.rotation.y += tiltX;
+            earthGroup.rotation.x += tiltY;
+
+        });
+
+        console.log("Parallax active");
+    };
+
+    // iOS requires permission
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+
+        window.addEventListener("click", () => {
+            DeviceOrientationEvent.requestPermission()
+                .then(response => {
+                    if (response === "granted") {
+                        enableParallax();
+                    }
+                })
+                .catch(console.error);
+        }, { once: true });
+
+    } else {
+        // Android
+        enableParallax();
+    }
+}
+// ------------------------------------------------------
+// ----------------------------------------------------
 let spotMeta = [];
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
@@ -136,6 +178,22 @@ opacity:0.35
 })
 );
 earthGroup.add(clouds);
+// ---------- STRONGER ATMOSPHERE ----------
+const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(1.14, 64, 64),
+    new THREE.MeshBasicMaterial({
+        color: 0x4da6ff,
+        transparent: true,
+        opacity: 0.12,
+        side: THREE.BackSide
+    })
+);
+
+earthGroup.add(atmosphere);
+// -----------------------------------------
+
+earthGroup.add(atmosphere);
+// -------------------------------------
 
 /* SPOTS */
 async function loadApprovedSpots(){
@@ -439,12 +497,17 @@ if(spot?.link_url){
 /* ANIMATE */
 function animate(){
 requestAnimationFrame(animate);
+// ---------- CINEMATIC BREATHING ----------
+const t = Date.now() * 0.0007;
+camera.position.z = 3.8 + Math.sin(t) * 0.065;
+// -----------------------------------------
 
 if(!dragging && searchTargetIndex === null){
     earthGroup.rotation.y += 0.0014;
 }
 
 clouds.rotation.y+=0.003;
+
 
 /* Puls */
 if(instancedMarkers){
