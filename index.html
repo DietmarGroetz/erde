@@ -103,12 +103,15 @@ const mouse=new THREE.Vector2();
 
 let instancedMarkers=null;
 let searchQuery="";
+let hitMarkers = null;
 let searchTargetIndex=null;
 let appState="idle";
 let openedImageMesh=null;
 let openedIndex=null;
 let previewMesh=null;
+let hoveredIndex = null;
 let markerPositions = [];
+let hoverPauseUntil = 0;
 
 
 
@@ -207,7 +210,7 @@ if(!data) return;
 
 spotMeta=data;
 
-const geometry=new THREE.SphereGeometry(0.015,16,16);
+const geometry = new THREE.SphereGeometry(0.015,16,16);
 const material=new THREE.MeshStandardMaterial({
 color:0xffffff,
 emissive:0x666666,
@@ -220,7 +223,17 @@ geometry,
 material,
 data.length
 );
+// größere unsichtbare Klickfläche
+const hitGeometry = new THREE.SphereGeometry(0.05,8,8);
+const hitMaterial = new THREE.MeshBasicMaterial({ visible:false });
 
+hitMarkers = new THREE.InstancedMesh(
+    hitGeometry,
+    hitMaterial,
+    data.length
+);
+
+earthGroup.add(hitMarkers);
 const dummy=new THREE.Object3D();
 
 for(let i=0;i<data.length;i++){
@@ -241,6 +254,7 @@ dummy.lookAt(normal.clone().multiplyScalar(2));
 dummy.updateMatrix();
 
 instancedMarkers.setMatrixAt(i,dummy.matrix);
+hitMarkers.setMatrixAt(i,dummy.matrix);
 markerPositions.push(dummy.position.clone());
 }
 
@@ -339,32 +353,150 @@ raycaster.setFromCamera(mouse,camera);
 
 
 const intersects = raycaster.intersectObject(instancedMarkers,false);
-if(intersects.length===0){
-if(previewMesh){scene.remove(previewMesh);previewMesh=null;}
-return;
+
+if(intersects.length === 0){
+
+    if(previewMesh){
+        scene.remove(previewMesh);
+        previewMesh = null;
+    }
+
+    hoveredIndex = null;
+    return;
 }
 
-const index=intersects[0].instanceId;
+const index = intersects[0].instanceId;
+hoveredIndex = index;
+hoverPauseUntil = Date.now() +1600; // 1 Sekunde Pause
 
 loader.load(spotMeta[index].image_url,(texture)=>{
-if(previewMesh) scene.remove(previewMesh);
-previewMesh=new THREE.Mesh(
-new THREE.CircleGeometry(0.07,32),
-new THREE.MeshBasicMaterial({map:texture,transparent:true})
-);
-previewMesh.position.copy(camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(1.8)));
-previewMesh.lookAt(camera.position);
-scene.add(previewMesh);
+
+    if(previewMesh){
+        scene.remove(previewMesh);
+    }
+
+    previewMesh = new THREE.Mesh(
+        new THREE.CircleGeometry(0.07,32),
+        new THREE.MeshBasicMaterial({map:texture,transparent:true})
+    );
+
+    previewMesh.position.copy(
+        camera.position.clone().add(
+            camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(1.8)
+        )
+    );
+
+    previewMesh.lookAt(camera.position);
+    scene.add(previewMesh);
 });
 });
 
 renderer.domElement.addEventListener("pointerup",(e)=>{
 
 dragging=false;
-
 mouse.x=(e.clientX/innerWidth)*2-1;
 mouse.y=-(e.clientY/innerHeight)*2+1;
 raycaster.setFromCamera(mouse,camera);
+// Desktop: Klick auf Preview soll Explosion starten
+if(previewMesh && hoveredIndex !== null){
+
+const previewHit = raycaster.intersectObject(previewMesh);
+
+if(previewHit.length > 0){
+
+    const index = hoveredIndex;
+
+    scene.remove(previewMesh);
+    previewMesh = null;
+    hoveredIndex = null;
+
+    // Explosion starten wie bei Marker
+    openedIndex = index;
+    appState="open";
+
+    loader.load(spotMeta[index].image_url,(texture)=>{
+
+        const matrix=new THREE.Matrix4();
+        instancedMarkers.getMatrixAt(index,matrix);
+        const position = new THREE.Vector3();
+        position.setFromMatrixPosition(matrix);
+        position.applyMatrix4(instancedMarkers.matrixWorld);
+
+        const group=new THREE.Group();
+        scene.add(group);
+
+        const dir=new THREE.Vector3();
+        camera.getWorldDirection(dir);
+        const target=camera.position.clone().add(dir.multiplyScalar(1.6));
+
+        const particleCount = 220;
+
+        for(let i=0;i<particleCount;i++){
+
+            const piece = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.05,0.05),
+                new THREE.MeshBasicMaterial({
+                    map:texture,
+                    transparent:true,
+                    side:THREE.DoubleSide
+                })
+            );
+
+            piece.position.copy(position);
+
+            const explosionDir = new THREE.Vector3(
+                (Math.random()-0.5),
+                (Math.random()-0.5),
+                (Math.random()-0.5)
+            ).normalize();
+
+            const strength = 0.6 + Math.random()*0.8;
+            piece.position.add(explosionDir.multiplyScalar(strength));
+
+            piece.rotation.set(
+                Math.random()*Math.PI,
+                Math.random()*Math.PI,
+                Math.random()*Math.PI
+            );
+
+            group.add(piece);
+
+            gsap.to(piece.position,{
+                x:target.x,
+                y:target.y,
+                z:target.z,
+                delay:0.4,
+                duration:1.2,
+                ease:"power3.inOut"
+            });
+
+            gsap.to(piece.rotation,{
+                x:0,y:0,z:0,
+                duration:1.6,
+                ease:"power3.out"
+            });
+        }
+
+        setTimeout(()=>{
+            group.clear();
+            scene.remove(group);
+            openedImageMesh=new THREE.Mesh(
+                new THREE.CircleGeometry(0.18,64),
+                new THREE.MeshBasicMaterial({map:texture,transparent:true})
+            );
+
+            openedImageMesh.position.copy(target);
+            openedImageMesh.lookAt(camera.position);
+            scene.add(openedImageMesh);
+            appState="open";
+        },1200);
+
+    });
+
+    return;
+}
+}
+
 
 // 🔴 BILD SCHLIESSEN WENN DANEBEN GEKLICKT
 // 🔴 BILD SCHLIESSEN (egal wo geklickt wird)
@@ -387,7 +519,7 @@ return;
 
 if(!instancedMarkers) return;
 
-const intersects=raycaster.intersectObject(instancedMarkers);
+const intersects = raycaster.intersectObject(hitMarkers);
 if(intersects.length===0) return;
 
 const index=intersects[0].instanceId;
@@ -503,7 +635,11 @@ camera.position.z = 3.8 + Math.sin(t) * 0.065;
 // -----------------------------------------
 
 if(!dragging && searchTargetIndex === null){
+
+if(Date.now() > hoverPauseUntil){
     earthGroup.rotation.y += 0.0014;
+}
+
 }
 
 clouds.rotation.y+=0.003;
