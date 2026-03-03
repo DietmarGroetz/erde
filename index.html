@@ -19,11 +19,18 @@ border:none;
 color:#fff;
 outline:none;
 }
+@media (max-width: 768px) {
+  #searchForm {
+    display: none;
+  }
+}
 </style>
 </head>
 <body>
 
-<input id="search" placeholder="Name suchen...">
+    <form id="searchForm">
+        <input id="search" type="search" placeholder="Name suchen..." enterkeyhint="search" autocomplete="off" spellcheck="false"> 
+        </form>
 <div id="earth-container"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -182,52 +189,63 @@ markerPositions.push(dummy.position.clone());
 earthGroup.add(instancedMarkers);
 }
 loadApprovedSpots();
-document.getElementById("search").addEventListener("keydown",(e)=>{
-
-if(e.key !== "Enter") return;
-if(!instancedMarkers) return;
-
-const query = e.target.value.toLowerCase();
-if(query === "") return;
-
-let foundIndex = null;
-
-for(let i=0;i<spotMeta.length;i++){
-    const name = spotMeta[i]?.name?.toLowerCase() || "";
-    if(name.includes(query)){
-        foundIndex = i;
-        break;
-    }
-}
-
-if(foundIndex === null) return;
-
-const matrix = new THREE.Matrix4();
-instancedMarkers.getMatrixAt(foundIndex, matrix);
-
-const pos = new THREE.Vector3();
-pos.setFromMatrixPosition(matrix);
-pos.applyMatrix4(instancedMarkers.matrixWorld);
-
-const earthPos = new THREE.Vector3();
-earthGroup.getWorldPosition(earthPos);
-
-const dir = pos.clone().sub(earthPos).normalize();
-
-const camTarget = earthPos.clone().add(dir.multiplyScalar(3.2));
-
-gsap.to(camera.position,{
-    x:camTarget.x,
-    y:camTarget.y,
-    z:camTarget.z,
-    duration:1.4,
-    ease:"power3.inOut",
-    onUpdate:()=>{
-        camera.lookAt(earthPos);
+const searchInput = document.getElementById("search");
+const searchForm = document.getElementById("searchForm");
+searchInput.addEventListener("keydown",(e)=>{
+    if(e.key === "Enter"){
+        e.preventDefault();
+        searchForm.dispatchEvent(new Event("submit",{cancelable:true}));
     }
 });
+searchForm.addEventListener("submit",(e)=>{
+    e.preventDefault();
 
+    if(!instancedMarkers) return;
+
+    const query = searchInput.value.toLowerCase();
+    if(query === "") return;
+
+    let foundIndex = null;
+
+    for(let i=0;i<spotMeta.length;i++){
+        const name = spotMeta[i]?.name?.toLowerCase() || "";
+        if(name.includes(query)){
+            foundIndex = i;
+            break;
+        }
+    }
+
+    if(foundIndex === null) return;
+
+    const matrix = new THREE.Matrix4();
+    instancedMarkers.getMatrixAt(foundIndex, matrix);
+
+    const pos = new THREE.Vector3();
+    pos.setFromMatrixPosition(matrix);
+    pos.applyMatrix4(instancedMarkers.matrixWorld);
+
+    const earthPos = new THREE.Vector3();
+    earthGroup.getWorldPosition(earthPos);
+
+    const dir = pos.clone().sub(earthPos).normalize();
+    const camTarget = earthPos.clone().add(dir.multiplyScalar(3.2));
+
+    gsap.to(camera.position,{
+        x:camTarget.x,
+        y:camTarget.y,
+        z:camTarget.z,
+        duration:1.4,
+        ease:"power3.inOut",
+        onUpdate:()=>{
+            camera.lookAt(earthPos);
+        }
+    });
+
+    searchInput.blur();
 });
+
+
+
 
 
 
@@ -243,11 +261,15 @@ lastY=e.clientY;
 
 renderer.domElement.addEventListener("pointermove",(e)=>{
 
-if(dragging){
-earthGroup.rotation.y+=(e.clientX-lastX)*0.005;
-earthGroup.rotation.x+=(e.clientY-lastY)*0.003;
-lastX=e.clientX;
-lastY=e.clientY;
+    if(dragging){
+
+const sensitivity = e.pointerType === "touch" ? 0.015 : 0.005;
+
+earthGroup.rotation.y += (e.clientX - lastX) * sensitivity;
+earthGroup.rotation.x += (e.clientY - lastY) * sensitivity * 0.6;
+
+lastX = e.clientX;
+lastY = e.clientY;
 return;
 }
 
