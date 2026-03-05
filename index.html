@@ -183,19 +183,47 @@ opacity:0.35
 earthGroup.add(clouds);
 // ---------- STRONGER ATMOSPHERE ----------
 const atmosphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1.14, 64, 64),
-    new THREE.MeshBasicMaterial({
-        color: 0x4da6ff,
+    new THREE.SphereGeometry(1.12, 64, 64),
+    new THREE.ShaderMaterial({
         transparent: true,
-        opacity: 0.12,
-        side: THREE.BackSide
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+
+        uniforms: {
+            glowColor: { value: new THREE.Color(0x4da6ff) },
+            viewVector: { value: camera.position }
+        },
+
+        vertexShader: `
+            varying vec3 vNormal;
+            varying vec3 vPositionNormal;
+
+            void main() {
+
+                vNormal = normalize(normalMatrix * normal);
+                vPositionNormal = normalize((modelViewMatrix * vec4(position,1.0)).xyz);
+
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+            }
+        `,
+
+        fragmentShader: `
+            uniform vec3 glowColor;
+            varying vec3 vNormal;
+            varying vec3 vPositionNormal;
+
+            void main() {
+
+             float intensity = pow(0.8 - dot(vNormal, vPositionNormal), 2.7);
+                gl_FragColor = vec4(glowColor, intensity);
+
+            }
+        `
     })
 );
 
 earthGroup.add(atmosphere);
-// -----------------------------------------
 
-earthGroup.add(atmosphere);
 // -------------------------------------
 
 /* SPOTS */
