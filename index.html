@@ -120,6 +120,20 @@ let lastX=0,lastY=0;
 let activePointerId=null;
 
 const loader=new THREE.TextureLoader();
+const textureCache = {};
+function getTexture(url, callback){
+
+if(textureCache[url]){
+    callback(textureCache[url]);
+    return;
+}
+
+loader.load(url,(texture)=>{
+    textureCache[url] = texture;
+    callback(texture);
+});
+
+}
 const earthGroup=new THREE.Group();
 scene.add(earthGroup);
 
@@ -397,7 +411,7 @@ const index = intersects[0].instanceId;
 hoveredIndex = index;
 hoverPauseUntil = Date.now() +1600; // 1 Sekunde Pause
 
-loader.load(spotMeta[index].image_url,(texture)=>{
+getTexture(spotMeta[index].image_url,(texture)=>{
 
     if(previewMesh){
         scene.remove(previewMesh);
@@ -442,7 +456,7 @@ if(previewHit.length > 0){
     openedIndex = index;
     appState="open";
 
-    loader.load(spotMeta[index].image_url,(texture)=>{
+    getTexture(spotMeta[index].image_url,(texture)=>{
 
         const matrix=new THREE.Matrix4();
         instancedMarkers.getMatrixAt(index,matrix);
@@ -554,7 +568,7 @@ const index=intersects[0].instanceId;
 openedIndex=index;
 appState="open";
 
-loader.load(spotMeta[index].image_url,(texture)=>{
+getTexture(spotMeta[index].image_url,(texture)=>{
 
 const matrix=new THREE.Matrix4();
 instancedMarkers.getMatrixAt(index,matrix);
