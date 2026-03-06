@@ -252,6 +252,12 @@ if(!data) return;
 
 spotMeta=data;
 
+data.forEach(spot=>{
+    if(spot.image_url){
+        getTexture(spot.image_url,()=>{});
+    }
+});
+
 const geometry = new THREE.SphereGeometry(0.015,16,16);
 const material=new THREE.MeshStandardMaterial({
 color:0xffffff,
@@ -374,7 +380,7 @@ lastY=e.clientY;
 });
 
 renderer.domElement.addEventListener("pointermove",(e)=>{
-
+    if(activePointerId !== null && e.pointerId !== activePointerId) return;
     if(dragging){
 
 const sensitivity = e.pointerType === "touch" ? 0.015 : 0.005;
@@ -408,6 +414,7 @@ if(intersects.length === 0){
 }
 
 const index = intersects[0].instanceId;
+if(index === hoveredIndex) return;
 hoveredIndex = index;
 hoverPauseUntil = Date.now() +1600; // 1 Sekunde Pause
 
