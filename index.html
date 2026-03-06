@@ -394,7 +394,7 @@ mouse.y=-(e.clientY/innerHeight)*2+1;
 raycaster.setFromCamera(mouse,camera);
 
 
-const intersects = raycaster.intersectObject(instancedMarkers,false);
+const intersects = raycaster.intersectObject(hitMarkers,false);
 
 if(intersects.length === 0){
 
@@ -412,6 +412,15 @@ hoveredIndex = index;
 hoverPauseUntil = Date.now() +1600; // 1 Sekunde Pause
 
 getTexture(spotMeta[index].image_url,(texture)=>{
+
+    if(index !== hoveredIndex) return;
+
+    if(previewMesh){
+    scene.remove(previewMesh);
+    previewMesh.geometry.dispose();
+    previewMesh.material.dispose();
+    previewMesh = null;
+}
 
     if(previewMesh){
         scene.remove(previewMesh);
