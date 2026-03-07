@@ -136,7 +136,7 @@ let spotMeta = [];
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(innerWidth,innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.domElement.style.touchAction="none";
 document.getElementById("earth-container").appendChild(renderer.domElement);
@@ -171,10 +171,17 @@ if(textureCache[url]){
     callback(textureCache[url]);
     return;
 }
-
 loader.load(url,(texture)=>{
-    textureCache[url] = texture;
-    callback(texture);
+
+texture.colorSpace = THREE.SRGBColorSpace;
+texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+texture.minFilter = THREE.LinearMipmapLinearFilter;
+texture.magFilter = THREE.LinearFilter;
+texture.generateMipmaps = true;
+
+textureCache[url] = texture;
+callback(texture);
+
 });
 
 }
@@ -579,11 +586,12 @@ if(previewHit.length > 0){
         setTimeout(()=>{
             group.clear();
             scene.remove(group);
-            openedImageMesh=new THREE.Mesh(
-                new THREE.CircleGeometry(0.18,64),
-                new THREE.MeshBasicMaterial({map:texture,transparent:true})
-            );
-
+            new THREE.MeshBasicMaterial({
+map:texture,
+transparent:true,
+side:THREE.DoubleSide,
+depthWrite:false
+})
             openedImageMesh.position.copy(target);
             openedImageMesh.lookAt(camera.position);
             scene.add(openedImageMesh);
@@ -697,9 +705,16 @@ group.clear();
 scene.remove(group);
 openedImageMesh=new THREE.Mesh(
 new THREE.CircleGeometry(0.18,64),
-new THREE.MeshBasicMaterial({map:texture,transparent:true})
+new THREE.MeshBasicMaterial({
+map:texture,
+transparent:true,
+side:THREE.DoubleSide,
+depthWrite:false
+})
 );
-
+openedImageMesh.renderOrder = 999;
+openedImageMesh.material.depthTest = false;
+openedImageMesh.material.depthWrite = false;
 openedImageMesh.position.copy(target);
 openedImageMesh.lookAt(camera.position);
 scene.add(openedImageMesh);
