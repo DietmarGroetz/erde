@@ -11,6 +11,18 @@
 <style>
 html,body{margin:0;height:100%;background:#000;overflow:hidden;}
 #fade{
+    #hint{
+position:absolute;
+bottom:25px;
+left:50%;
+transform:translateX(-50%);
+color:#ffffffcc;
+font-family:Arial, sans-serif;
+font-size:14px;
+letter-spacing:1px;
+z-index:20;
+pointer-events:none;
+}
 position:fixed;
 top:0;
 left:0;
@@ -39,16 +51,32 @@ outline:none;
     display: none;
   }
 }
+#hint{
+position:absolute;
+bottom:25px;
+left:50%;
+transform:translateX(-50%);
+color:#ffffffcc;
+font-family:Arial, sans-serif;
+font-size:14px;
+letter-spacing:1px;
+z-index:20;
+pointer-events:none;
+}
 </style>
 </head>
 <body>
     <div id="fade"></div>
 
+    <div id="earth-container"></div>
+    
+    <div id="hint">
+    Drag to rotate • Hover a spot • Click to explore
+    </div>
+    
     <form id="searchForm">
-        <input id="search" type="search" placeholder="Name suchen..." enterkeyhint="search" autocomplete="off" spellcheck="false"> 
-        </form>
-<div id="earth-container"></div>
-
+    <input id="search" type="search" placeholder="Name suchen..." enterkeyhint="search" autocomplete="off" spellcheck="false">
+    </form>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script type="module">
@@ -752,6 +780,11 @@ camera.lookAt(earthGroup.position);
 renderer.render(scene,camera);
 }
 animate();
+gsap.to("#hint",{
+opacity:0,
+delay:4,
+duration:1
+});
 gsap.to("#fade",{
 opacity:0,
 duration:1.5,
