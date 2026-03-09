@@ -90,48 +90,7 @@ const supabase = window.supabase.createClient(
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(45,innerWidth/innerHeight,0.1,1000);
 camera.position.set(0,0,3.8);
-// ---------- MOBILE PARALLAX WITH PERMISSION ----------
-const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
-if (isMobile && typeof DeviceOrientationEvent !== "undefined") {
-
-    const enableParallax = () => {
-
-        window.addEventListener("deviceorientation",(e)=>{
-
-            if(e.gamma === null || e.beta === null) return;
-
-            const tiltX = e.gamma * 0.003;
-            const tiltY = e.beta * 0.003;
-
-            earthGroup.rotation.y = tiltX;
-            earthGroup.rotation.x = tiltY;
-
-        });
-
-        console.log("Parallax active");
-    };
-
-    // iOS requires permission
-    if (typeof DeviceOrientationEvent.requestPermission === "function") {
-
-        window.addEventListener("click", () => {
-            DeviceOrientationEvent.requestPermission()
-                .then(response => {
-                    if (response === "granted") {
-                        enableParallax();
-                    }
-                })
-                .catch(console.error);
-        }, { once: true });
-
-    } else {
-        // Android
-        enableParallax();
-    }
-}
-// ------------------------------------------------------
-// ----------------------------------------------------
 let spotMeta = [];
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
