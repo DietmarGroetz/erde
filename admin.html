@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+<title>GlobalOneSpot Admin</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+body{
+font-family:Arial;
+max-width:800px;
+margin:40px auto;
+}
+
+.spot{
+border-bottom:1px solid #ccc;
+padding:15px 0;
+}
+
+button{
+background:#28a745;
+color:white;
+border:none;
+padding:8px 14px;
+cursor:pointer;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Neue Spots prüfen</h2>
+
+<div id="list"></div>
+
+<script>
+
+const supabase = window.supabase.createClient(
+"https://vxucflqzkjzchjlibmvh.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
+)
+
+const list = document.getElementById("list")
+
+async function loadSpots(){
+
+const { data } = await supabase
+.from("spots")
+.select("*")
+.eq("payment_status","pending")
+.order("created_at",{ascending:false})
+
+list.innerHTML=""
+
+data.forEach(spot=>{
+
+list.innerHTML += `
+<div class="spot">
+
+<b>${spot.name}</b><br>
+${spot.email}<br><br>
+
+<button onclick="approveSpot('${spot.id}')">
+Freigeben
+</button>
+
+</div>
+`
+
+})
+
+}
+
+async function approveSpot(id){
+
+await fetch(
+"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/approve-spot",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({id})
+}
+)
+
+loadSpots()
+
+}
+
+loadSpots()
+
+</script>
+
+</body>
+</html>

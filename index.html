@@ -104,8 +104,8 @@ if (isMobile && typeof DeviceOrientationEvent !== "undefined") {
             const tiltX = e.gamma * 0.003;
             const tiltY = e.beta * 0.003;
 
-            earthGroup.rotation.y += tiltX;
-            earthGroup.rotation.x += tiltY;
+            earthGroup.rotation.y = tiltX;
+            earthGroup.rotation.x = tiltY;
 
         });
 
