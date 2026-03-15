@@ -27,6 +27,7 @@ color:white;
 border:none;
 padding:8px 14px;
 cursor:pointer;
+margin-right:10px;
 }
 
 </style>
@@ -41,20 +42,28 @@ cursor:pointer;
 
 <script>
 
-const supabase = window.supabase.createClient(
-"https://vxucflqzkjzchjlibmvh.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
+const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZ3JsaHBldmJoc2R5aWZvd3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDQzNTEsImV4cCI6MjA4NjMyMDM1MX0.iQfooNmObmOkVSsdoqo61nzpcm0799zWNG5a4zhJihw"
+
+const db = window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_ANON
 )
 
 const list = document.getElementById("list")
 
 async function loadSpots(){
 
-const { data } = await supabase
-.from("spots")
-.select("*")
-.eq("payment_status","pending")
-.order("created_at",{ascending:false})
+    const res = await fetch(
+"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/get-pending-spots",
+{
+headers:{
+"Authorization":"Bearer " + SUPABASE_ANON
+}
+}
+)  
+
+const data = await res.json()
 
 list.innerHTML=""
 
@@ -68,6 +77,10 @@ ${spot.email}<br><br>
 
 <button onclick="approveSpot('${spot.id}')">
 Freigeben
+</button>
+
+<button onclick="deleteSpot('${spot.id}')">
+Löschen
 </button>
 
 </div>
@@ -84,7 +97,26 @@ await fetch(
 {
 method:"POST",
 headers:{
-"Content-Type":"application/json"
+"Content-Type":"application/json",
+"Authorization":"Bearer " + SUPABASE_ANON
+},
+body:JSON.stringify({id})
+}
+)
+
+loadSpots()
+
+}
+
+async function deleteSpot(id){
+
+await fetch(
+"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/delete-spot",
+{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + SUPABASE_ANON
 },
 body:JSON.stringify({id})
 }
