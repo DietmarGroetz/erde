@@ -1,132 +1,66 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <meta charset="UTF-8">
-<title>GlobalOneSpot Admin</title>
-
+<title>Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-
-body{
-font-family:Arial;
-max-width:800px;
-margin:40px auto;
-}
-
-.spot{
-border-bottom:1px solid #ccc;
-padding:15px 0;
-}
-
-button{
-background:#28a745;
-color:white;
-border:none;
-padding:8px 14px;
-cursor:pointer;
-margin-right:10px;
-}
-
-</style>
-
 </head>
 
 <body>
 
-<h2>Neue Spots prüfen</h2>
-
+<h2>Spots prüfen</h2>
 <div id="list"></div>
 
 <script>
 
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZ3JsaHBldmJoc2R5aWZvd3JvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NDQzNTEsImV4cCI6MjA4NjMyMDM1MX0.iQfooNmObmOkVSsdoqo61nzpcm0799zWNG5a4zhJihw"
+const SUPABASE_ANON = "DEIN_KEY"
 
-const db = window.supabase.createClient(
-SUPABASE_URL,
-SUPABASE_ANON
-)
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
 
-const list = document.getElementById("list")
+async function load(){
 
-async function loadSpots(){
+  const { data } = await db
+    .from("spots")
+    .select("*")
+    .eq("approved", false)
 
-    const res = await fetch(
-"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/get-pending-spots",
-{
-headers:{
-"Authorization":"Bearer " + SUPABASE_ANON
-}
-}
-)  
+  const list = document.getElementById("list")
+  list.innerHTML = ""
 
-const data = await res.json()
+  data.forEach(s => {
 
-list.innerHTML=""
+    list.innerHTML += `
+      <div style="border-bottom:1px solid #ccc;padding:10px">
+        <b>${s.name}</b><br>
+        ${s.email}<br><br>
 
-data.forEach(spot=>{
-
-list.innerHTML += `
-<div class="spot">
-
-<b>${spot.name}</b><br>
-${spot.email}<br><br>
-
-<button onclick="approveSpot('${spot.id}')">
-Freigeben
-</button>
-
-<button onclick="deleteSpot('${spot.id}')">
-Löschen
-</button>
-
-</div>
-`
-
-})
-
+        <button onclick="approve('${s.id}')">Freigeben</button>
+        <button onclick="remove('${s.id}')">Löschen</button>
+      </div>
+    `
+  })
 }
 
-async function approveSpot(id){
-
-await fetch(
-"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/approve-spot",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer " + SUPABASE_ANON
-},
-body:JSON.stringify({id})
-}
-)
-
-loadSpots()
-
+async function approve(id){
+  await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ id, action:"approve" })
+  })
+  load()
 }
 
-async function deleteSpot(id){
-
-await fetch(
-"https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/delete-spot",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization":"Bearer " + SUPABASE_ANON
-},
-body:JSON.stringify({id})
-}
-)
-
-loadSpots()
-
+async function remove(id){
+  await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ id, action:"delete" })
+  })
+  load()
 }
 
-loadSpots()
+load()
 
 </script>
 
