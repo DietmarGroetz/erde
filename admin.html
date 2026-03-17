@@ -38,9 +38,12 @@ if (!data) return
   data.forEach(s => {
 
     list.innerHTML += `
-      <div style="border-bottom:1px solid #ccc;padding:10px">
-        <b>${s.name}</b><br>
-        ${s.email}<br><br>
+  <div style="border-bottom:1px solid #ccc;padding:10px">
+    
+    <b>${s.name}</b><br>
+    ${s.email}<br><br>
+
+    ${s.image_url ? `<img src="${s.image_url}" style="max-width:200px"><br><br>` : "Kein Bild<br><br>"}  
 
         <button onclick="approve('${s.id}')">Freigeben</button>
         <button onclick="remove('${s.id}')">Löschen</button>
