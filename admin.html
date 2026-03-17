@@ -21,7 +21,7 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
 async function load(){
 
-  const { data } = await db
+    const { data, error } = await db
     .from("spots")
     .select("*")
     .eq("approved", false)
