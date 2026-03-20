@@ -16,11 +16,28 @@
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
 
-// 🔐 DEIN SECRET (gleich wie in Supabase!)
+// 🔐 DEIN SECRET
 const ADMIN_SECRET = "k534dPZimnopqxy421"
 
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+
+// ✅ URL STATUS BADGE
+function getUrlBadge(s) {
+  if (!s.url_valid) {
+    return `<span style="color:red;font-weight:bold;">❌ invalid</span>`
+  }
+
+  if (s.url_status === "blocked") {
+    return `<span style="color:darkred;font-weight:bold;">🚫 blocked</span>`
+  }
+
+  if (s.url_status === "suspicious") {
+    return `<span style="color:orange;font-weight:bold;">⚠️ suspicious</span>`
+  }
+
+  return `<span style="color:green;font-weight:bold;">✅ ok</span>`
+}
 
 async function load(){
 
@@ -51,6 +68,17 @@ async function load(){
           ? `<img src="${s.image_url}" style="max-width:200px"><br><br>` 
           : "Kein Bild<br><br>"
         }
+
+        <!-- ✅ URL Anzeige -->
+        <div>
+          <b>URL:</b><br>
+          ${s.link_url 
+            ? `<a href="${s.link_url}" target="_blank">${s.link_url}</a>` 
+            : "keine URL"
+          }<br>
+          ${getUrlBadge(s)}
+        </div>
+        <br>
 
         <button onclick="approve('${s.id}')">Freigeben</button>
         <button onclick="remove('${s.id}')">Löschen</button>
