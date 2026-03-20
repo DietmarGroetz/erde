@@ -3,7 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <title>Admin</title>
+
+<!-- ✅ Supabase Script (muss alleine stehen!) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 🔐 Admin Passwortschutz -->
+<script>
+const ADMIN_PASSWORD = "5Tfgpq13H*!zZim"
+
+const input = prompt("Admin Passwort:")
+
+if (input !== ADMIN_PASSWORD) {
+  document.body.innerHTML = "Zugriff verweigert"
+  throw new Error("Unauthorized")
+}
+</script>
+S
 </head>
 
 <body>
@@ -16,8 +31,8 @@
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
 
-// 🔐 DEIN SECRET
-const ADMIN_SECRET = "k534dPZimnopqxy421"
+// 🔐 SECRET NICHT MEHR IM CODE
+const ADMIN_SECRET = prompt("Admin API Key:")
 
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
