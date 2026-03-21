@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Admin</title>
 
-<!-- ✅ Supabase Script (muss alleine stehen!) -->
+<!-- ✅ Supabase Script -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- 🔐 Admin Passwortschutz -->
@@ -13,12 +13,13 @@ const ADMIN_PASSWORD = "5Tfgpq13H*!zZim"
 
 const input = prompt("Admin Passwort:")
 
-if (input !== ADMIN_PASSWORD) {
+// ❗ blockieren wenn falsch ODER abgebrochen
+if (!input || input !== ADMIN_PASSWORD) {
   document.body.innerHTML = "Zugriff verweigert"
   throw new Error("Unauthorized")
 }
 </script>
-S
+
 </head>
 
 <body>
@@ -31,9 +32,15 @@ S
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
 
-// 🔐 SECRET NICHT MEHR IM CODE
-const ADMIN_SECRET = prompt("Admin API Key:")
+// 🔐 API KEY ABFRAGE
+let ADMIN_SECRET = prompt("Admin API Key:")
 
+if (!ADMIN_SECRET) {
+  document.body.innerHTML = "Kein API Key"
+  throw new Error("No API Key")
+}
+
+// ✅ Supabase Client (war bei dir kaputt!)
 const { createClient } = supabase
 const db = createClient(SUPABASE_URL, SUPABASE_ANON)
 
@@ -62,7 +69,7 @@ async function load(){
     .eq("approved", false)
 
   if (error) {
-    console.error(error)
+    console.error("LOAD ERROR:", error)
     return
   }
 
@@ -84,7 +91,6 @@ async function load(){
           : "Kein Bild<br><br>"
         }
 
-        <!-- ✅ URL Anzeige -->
         <div>
           <b>URL:</b><br>
           ${s.link_url 
@@ -103,7 +109,7 @@ async function load(){
 }
 
 async function approve(id){
-  await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
+  const res = await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
@@ -111,11 +117,14 @@ async function approve(id){
     },
     body: JSON.stringify({ id, action:"approve" })
   })
+
+  console.log("APPROVE STATUS:", res.status)
+
   load()
 }
 
 async function remove(id){
-  await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
+  const res = await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
@@ -123,6 +132,9 @@ async function remove(id){
     },
     body: JSON.stringify({ id, action:"delete" })
   })
+
+  console.log("DELETE STATUS:", res.status)
+
   load()
 }
 
