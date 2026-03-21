@@ -7,22 +7,20 @@
 <!-- ✅ Supabase Script -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+</head>
+
+<body>
+
 <!-- 🔐 Admin Passwortschutz -->
 <script>
 const ADMIN_PASSWORD = "5Tfgpq13H*!zZim"
 
 const input = prompt("Admin Passwort:")
 
-// ❗ blockieren wenn falsch ODER abgebrochen
 if (!input || input !== ADMIN_PASSWORD) {
   document.body.innerHTML = "Zugriff verweigert"
-  throw new Error("Unauthorized")
 }
 </script>
-
-</head>
-
-<body>
 
 <h2>Spots prüfen</h2>
 <div id="list"></div>
@@ -32,8 +30,7 @@ if (!input || input !== ADMIN_PASSWORD) {
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
 
-
-// ✅ Supabase Client (war bei dir kaputt!)
+// ✅ Supabase Client
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
 
 // ✅ URL STATUS BADGE
@@ -105,7 +102,7 @@ async function approve(id){
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-     "Authorization": "Bearer k534dPZimnopqxy421" 
+      "Authorization": "Bearer k534dPZimnopqxy421"
     },
     body: JSON.stringify({ id, action:"approve" })
   })
@@ -116,13 +113,19 @@ async function approve(id){
 }
 
 async function remove(id){
+
+  console.log("DELETE ID:", id)
+
   const res = await fetch("https://vxucflqzkjzchjlibmvh.supabase.co/functions/v1/admin-approve", {
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "Authorization": "Bearer " + ADMIN_SECRET
+      "Authorization": "Bearer k534dPZimnopqxy421"
     },
-    body: JSON.stringify({ id, action:"delete" })
+    body: JSON.stringify({ 
+      id: id, 
+      action: "delete" 
+    })
   })
 
   console.log("DELETE STATUS:", res.status)
