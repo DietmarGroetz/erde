@@ -32,17 +32,9 @@ if (!input || input !== ADMIN_PASSWORD) {
 const SUPABASE_URL = "https://vxucflqzkjzchjlibmvh.supabase.co"
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4dWNmbHF6a2p6Y2hqbGlibXZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIxMDgwMjcsImV4cCI6MjA4NzY4NDAyN30.YRQIAr34P_xiWPlhH8z7G21jt8sCRYiMRtpcF5lM6BI"
 
-// 🔐 API KEY ABFRAGE
-let ADMIN_SECRET = prompt("Admin API Key:")
-
-if (!ADMIN_SECRET) {
-  document.body.innerHTML = "Kein API Key"
-  throw new Error("No API Key")
-}
 
 // ✅ Supabase Client (war bei dir kaputt!)
-const { createClient } = supabase
-const db = createClient(SUPABASE_URL, SUPABASE_ANON)
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON)
 
 // ✅ URL STATUS BADGE
 function getUrlBadge(s) {
@@ -113,7 +105,7 @@ async function approve(id){
     method:"POST",
     headers:{
       "Content-Type":"application/json",
-      "Authorization": "Bearer " + ADMIN_SECRET
+     "Authorization": "Bearer k534dPZimnopqxy421" 
     },
     body: JSON.stringify({ id, action:"approve" })
   })
