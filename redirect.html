@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Weiterleitung...</title>
+</head>
+<body>
+
+<script>
+const params = new URLSearchParams(window.location.search)
+const spot = params.get("Wähle deinen Spot") || params.get("Choose your spot")
+
+const stripeLinks = {
+  "Standard – 1€": "HIER_1EURO_LINK",
+  "Premium – 5€": "HIER_5EURO_LINK",
+  "Top Spot – 10€": "HIER_10EURO_LINK"
+}
+
+if (stripeLinks[spot]) {
+  window.location.href = stripeLinks[spot]
+} else {
+  document.body.innerHTML = "Fehler – bitte erneut versuchen."
+}
+</script>
+
+</body>
+</html>
