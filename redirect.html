@@ -7,8 +7,18 @@
 <body>
 <script>
 const params = new URLSearchParams(window.location.search);
-const spot = params.get("spot");
 
+let spot = "";
+
+// 👉 finde den richtigen Wert automatisch
+for (const [key, value] of params.entries()) {
+  if (value === "standard" || value === "premium" || value === "top") {
+    spot = value;
+    break;
+  }
+}
+
+// 👉 Routing
 if (spot === "standard") {
   window.location.href = "https://buy.stripe.com/bJe7sLg2I7u03ET55d5EY00";
 }
