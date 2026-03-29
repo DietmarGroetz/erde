@@ -7,24 +7,18 @@
 <body>
 <script>
 const params = new URLSearchParams(window.location.search);
+const spot = params.get("spot");
 
-// 👉 alle Parameter durchgehen
-let value = "";
-
-for (const [key, val] of params.entries()) {
-  if (val.includes("€")) {
-    value = decodeURIComponent(val).toLowerCase();
-    break;
-  }
-}
-
-if (value.includes("10")) {
-  window.location.href = "https://buy.stripe.com/14A9ATaHH02m5N1fJR5EY02";
-} else if (value.includes("5")) {
-  window.location.href = "https://buy.stripe.com/fZu9AT8zz9CWgrFgNV5EY01";
-} else if (value.includes("1")) {
+if (spot === "standard") {
   window.location.href = "https://buy.stripe.com/bJe7sLg2I7u03ET55d5EY00";
-} else {
+}
+else if (spot === "premium") {
+  window.location.href = "https://buy.stripe.com/fZu9AT8zz9CWgrFgNV5EY01";
+}
+else if (spot === "top") {
+  window.location.href = "https://buy.stripe.com/14A9ATaHH02m5N1fJR5EY02";
+}
+else {
   document.body.innerHTML = "Fehler – bitte erneut versuchen.";
 }
 </script>
