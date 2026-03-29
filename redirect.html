@@ -12,6 +12,11 @@ const spot = params.get("spot") || "";
 
 const value = decodeURIComponent(spot).toLowerCase();
 
+
+  console.log("SPOT:", spot);
+console.log("VALUE:", value);
+document.body.innerHTML = "Spot: " + spot;
+
 if (value.includes("10")) {
   window.location.href = "https://buy.stripe.com/14A9ATaHH02m5N1fJR5EY02";
 } else if (value.includes("5")) {
