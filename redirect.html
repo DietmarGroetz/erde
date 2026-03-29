@@ -7,32 +7,25 @@
 <body>
 
 <script>
-const params = new URLSearchParams(window.location.search)
-const spot = params.get("Wähle deinen Spot") || params.get("Choose your spot")
 
+</body>
+</html>
+<script>
+const params = new URLSearchParams(window.location.search)
 const spot = params.get("spot") || ""
 
 const value = decodeURIComponent(spot).toLowerCase()
 
-if (value.includes("1")) {
-  window.location.href = "HIER_1EURO_LINK"
+if (value.includes("10")) {
+  window.location.href = "DEIN_10_EURO_LINK"
 }
 else if (value.includes("5")) {
-  window.location.href = "HIER_5EURO_LINK"
+  window.location.href = "DEIN_5_EURO_LINK"
 }
-else if (value.includes("10")) {
-  window.location.href = "HIER_10EURO_LINK"
+else if (value.includes("1")) {
+  window.location.href = "DEIN_1_EURO_LINK"
 }
 else {
   document.body.innerHTML = "Fehler – bitte erneut versuchen."
 }
-
-if (stripeLinks[spot]) {
-  window.location.href = stripeLinks[spot]
-} else {
-  document.body.innerHTML = "Fehler – bitte erneut versuchen."
-}
 </script>
-
-</body>
-</html>
